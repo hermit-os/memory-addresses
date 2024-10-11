@@ -1,16 +1,12 @@
 //! Physical and virtual addresses manipulation
 
-use core::convert::TryFrom;
 use core::fmt;
 #[cfg(feature = "step_trait")]
 use core::iter::Step;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 
-use crate::structures::paging::page_table::PageTableLevel;
-use crate::structures::paging::{PageOffset, PageTableIndex};
-use bit_field::BitField;
-
-const ADDRESS_SPACE_SIZE: u64 = 0x1_0000_0000_0000;
+use x86_64::structures::paging::page_table::PageTableLevel;
+use x86_64::structures::paging::{PageOffset, PageTableIndex};
 
 /// A canonical 64-bit virtual memory address.
 ///
@@ -240,7 +236,7 @@ impl VirtAddr {
     }
 
     // FIXME: Move this into the `Step` impl, once `Step` is stabilized.
-    #[cfg(any(feature = "instructions", feature = "step_trait"))]
+    #[cfg(any(feature = "step_trait"))]
     pub(crate) fn steps_between_impl(start: &Self, end: &Self) -> Option<usize> {
         let mut steps = end.0.checked_sub(start.0)?;
 
@@ -252,6 +248,7 @@ impl VirtAddr {
 
     // FIXME: Move this into the `Step` impl, once `Step` is stabilized.
     #[inline]
+    #[cfg(feature = "step_trait")]
     pub(crate) fn forward_checked_impl(start: Self, count: usize) -> Option<Self> {
         let offset = u64::try_from(count).ok()?;
         if offset > ADDRESS_SPACE_SIZE {
