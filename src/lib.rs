@@ -7,7 +7,10 @@ pub mod arch;
 #[cfg(target_arch = "x86_64")]
 pub use crate::arch::x86_64::{PhysAddr, VirtAddr};
 
-#[cfg(not(any(target_arch = "x86_64")))]
+#[cfg(target_arch = "aarch64")]
+pub use crate::arch::aarch64::{PhysAddr, VirtAddr};
+
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 pub use crate::arch::fallback::{PhysAddr, VirtAddr};
 
 /// Align number upwards.
