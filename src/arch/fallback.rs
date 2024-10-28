@@ -1,45 +1,20 @@
 //! Physical and virtual addresses manipulation
 
+use crate::{align_down, align_up};
 use core::fmt;
-#[cfg(feature = "step_trait")]
-use core::iter::Step;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 
-/// A canonical 64-bit virtual memory address.
-///
-/// This is a wrapper type around an `usize`, so it is always 8 bytes, even when compiled
-/// on non 64-bit systems. The
-/// [`TryFrom`](https://doc.rust-lang.org/std/convert/trait.TryFrom.html) trait can be used for performing conversions
-/// between `usize` and `usize`.
-///
-/// On `x86_64`, only the 48 lower bits of a virtual address can be used. The top 16 bits need
-/// to be copies of bit 47, i.e. the most significant bit. Addresses that fulfil this criterion
-/// are called “canonical”. This type guarantees that it always represents a canonical address.
+/// A virtual memory address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct VirtAddr(usize);
+pub struct VirtAddr(pub usize);
 
-/// A 64-bit physical memory address.
-///
-/// This is a wrapper type around an `usize`, so it is always 8 bytes, even when compiled
-/// on non 64-bit systems. The
-/// [`TryFrom`](https://doc.rust-lang.org/std/convert/trait.TryFrom.html) trait can be used for performing conversions
-/// between `usize` and `usize`.
-///
-/// On `x86_64`, only the 52 lower bits of a physical address can be used. The top 12 bits need
-/// to be zero. This type guarantees that it always represents a valid physical address.
+/// A physical memory address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct PhysAddr(usize);
+pub struct PhysAddr(pub usize);
 
-/// A passed `usize` was not a valid virtual address.
-///
-/// This means that bits 48 to 64 are not
-/// a valid sign extension and are not null either. So automatic sign extension would have
-/// overwritten possibly meaningful bits. This likely indicates a bug, for example an invalid
-/// address calculation.
-///
-/// Contains the invalid address.
+/// An invalid virtual address
 pub struct VirtAddrNotValid(pub usize);
 
 impl core::fmt::Debug for VirtAddrNotValid {
@@ -216,24 +191,6 @@ impl Sub<VirtAddr> for VirtAddr {
     }
 }
 
-#[cfg(feature = "step_trait")]
-impl Step for VirtAddr {
-    #[inline]
-    fn steps_between(start: &Self, end: &Self) -> Option<usize> {
-        end.0.checked_sub(start.0)
-    }
-
-    #[inline]
-    fn forward_checked(start: Self, count: usize) -> Option<Self> {
-        start.checked_add(count)
-    }
-
-    #[inline]
-    fn backward_checked(start: Self, count: usize) -> Option<Self> {
-        start.checked_sub(count)
-    }
-}
-
 /// A passed `usize` was not a valid physical address.
 ///
 /// This means that bits 52 to 64 were not all null.
@@ -259,7 +216,7 @@ impl PhysAddr {
     /// Creates a new physical address truncating non-address parts.
     #[inline]
     pub const fn new_truncate(addr: usize) -> PhysAddr {
-        PhysAddr(addr % (1 << 52))
+        PhysAddr(addr)
     }
 
     /// Creates a new physical address, without any checks.
@@ -295,11 +252,6 @@ impl PhysAddr {
     /// Aligns the physical address upwards to the given alignment.
     ///
     /// See the `align_up` function for more information.
-    ///
-    /// # Panics
-    ///
-    /// This function panics if the resulting address has a bit in the range 52
-    /// to 64 set.
     #[inline]
     pub fn align_up<U>(self, align: U) -> Self
     where
@@ -407,204 +359,5 @@ impl Sub<PhysAddr> for PhysAddr {
     #[inline]
     fn sub(self, rhs: PhysAddr) -> Self::Output {
         self.0.checked_sub(rhs.0).unwrap()
-    }
-}
-
-/// Align address downwards.
-///
-/// Returns the greatest `x` with alignment `align` so that `x <= addr`.
-///
-/// Panics if the alignment is not a power of two.
-#[inline]
-pub const fn align_down(addr: usize, align: usize) -> usize {
-    assert!(align.is_power_of_two(), "`align` must be a power of two");
-    addr & !(align - 1)
-}
-
-/// Align address upwards.
-///
-/// Returns the smallest `x` with alignment `align` so that `x >= addr`.
-///
-/// Panics if the alignment is not a power of two or if an overflow occurs.
-#[inline]
-pub const fn align_up(addr: usize, align: usize) -> usize {
-    assert!(align.is_power_of_two(), "`align` must be a power of two");
-    let align_mask = align - 1;
-    if addr & align_mask == 0 {
-        addr // already aligned
-    } else {
-        // FIXME: Replace with .expect, once `Option::expect` is const.
-        if let Some(aligned) = (addr | align_mask).checked_add(1) {
-            aligned
-        } else {
-            panic!("attempt to add with overflow")
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    pub fn virtaddr_new_truncate() {
-        assert_eq!(VirtAddr::new_truncate(0), VirtAddr(0));
-        assert_eq!(VirtAddr::new_truncate(123), VirtAddr(123));
-    }
-
-    #[test]
-    #[cfg(feature = "step_trait")]
-    fn virtaddr_step_forward() {
-        assert_eq!(Step::forward(VirtAddr(0), 0), VirtAddr(0));
-        assert_eq!(Step::forward(VirtAddr(0), 1), VirtAddr(1));
-        assert_eq!(
-            Step::forward(VirtAddr(0x7fff_ffff_ffff), 1),
-            VirtAddr(0xffff_8000_0000_0000)
-        );
-        assert_eq!(
-            Step::forward(VirtAddr(0xffff_8000_0000_0000), 1),
-            VirtAddr(0xffff_8000_0000_0001)
-        );
-        assert_eq!(
-            Step::forward_checked(VirtAddr(0xffff_ffff_ffff_ffff), 1),
-            None
-        );
-        assert_eq!(
-            Step::forward(VirtAddr(0x7fff_ffff_ffff), 0x1234_5678_9abd),
-            VirtAddr(0xffff_9234_5678_9abc)
-        );
-        assert_eq!(
-            Step::forward(VirtAddr(0x7fff_ffff_ffff), 0x8000_0000_0000),
-            VirtAddr(0xffff_ffff_ffff_ffff)
-        );
-        assert_eq!(
-            Step::forward(VirtAddr(0x7fff_ffff_ff00), 0x8000_0000_00ff),
-            VirtAddr(0xffff_ffff_ffff_ffff)
-        );
-        assert_eq!(
-            Step::forward_checked(VirtAddr(0x7fff_ffff_ff00), 0x8000_0000_0100),
-            None
-        );
-        assert_eq!(
-            Step::forward_checked(VirtAddr(0x7fff_ffff_ffff), 0x8000_0000_0001),
-            None
-        );
-    }
-
-    #[test]
-    #[cfg(feature = "step_trait")]
-    fn virtaddr_step_backward() {
-        assert_eq!(Step::backward(VirtAddr(0), 0), VirtAddr(0));
-        assert_eq!(Step::backward_checked(VirtAddr(0), 1), None);
-        assert_eq!(Step::backward(VirtAddr(1), 1), VirtAddr(0));
-        assert_eq!(
-            Step::backward(VirtAddr(0xffff_8000_0000_0000), 1),
-            VirtAddr(0x7fff_ffff_ffff)
-        );
-        assert_eq!(
-            Step::backward(VirtAddr(0xffff_8000_0000_0001), 1),
-            VirtAddr(0xffff_8000_0000_0000)
-        );
-        assert_eq!(
-            Step::backward(VirtAddr(0xffff_9234_5678_9abc), 0x1234_5678_9abd),
-            VirtAddr(0x7fff_ffff_ffff)
-        );
-        assert_eq!(
-            Step::backward(VirtAddr(0xffff_8000_0000_0000), 0x8000_0000_0000),
-            VirtAddr(0)
-        );
-        assert_eq!(
-            Step::backward(VirtAddr(0xffff_8000_0000_0000), 0x7fff_ffff_ff01),
-            VirtAddr(0xff)
-        );
-        assert_eq!(
-            Step::backward_checked(VirtAddr(0xffff_8000_0000_0000), 0x8000_0000_0001),
-            None
-        );
-    }
-
-    #[test]
-    #[cfg(feature = "step_trait")]
-    fn virtaddr_steps_between() {
-        assert_eq!(Step::steps_between(&VirtAddr(0), &VirtAddr(0)), Some(0));
-        assert_eq!(Step::steps_between(&VirtAddr(0), &VirtAddr(1)), Some(1));
-        assert_eq!(Step::steps_between(&VirtAddr(1), &VirtAddr(0)), None);
-        assert_eq!(
-            Step::steps_between(
-                &VirtAddr(0x7fff_ffff_ffff),
-                &VirtAddr(0xffff_8000_0000_0000)
-            ),
-            Some(1)
-        );
-        assert_eq!(
-            Step::steps_between(
-                &VirtAddr(0xffff_8000_0000_0000),
-                &VirtAddr(0x7fff_ffff_ffff)
-            ),
-            None
-        );
-        assert_eq!(
-            Step::steps_between(
-                &VirtAddr(0xffff_8000_0000_0000),
-                &VirtAddr(0xffff_8000_0000_0000)
-            ),
-            Some(0)
-        );
-        assert_eq!(
-            Step::steps_between(
-                &VirtAddr(0xffff_8000_0000_0000),
-                &VirtAddr(0xffff_8000_0000_0001)
-            ),
-            Some(1)
-        );
-        assert_eq!(
-            Step::steps_between(
-                &VirtAddr(0xffff_8000_0000_0001),
-                &VirtAddr(0xffff_8000_0000_0000)
-            ),
-            None
-        );
-    }
-
-    #[test]
-    pub fn test_align_up() {
-        // align 1
-        assert_eq!(align_up(0, 1), 0);
-        assert_eq!(align_up(1234, 1), 1234);
-        assert_eq!(align_up(0xffff_ffff_ffff_ffff, 1), 0xffff_ffff_ffff_ffff);
-        // align 2
-        assert_eq!(align_up(0, 2), 0);
-        assert_eq!(align_up(1233, 2), 1234);
-        assert_eq!(align_up(0xffff_ffff_ffff_fffe, 2), 0xffff_ffff_ffff_fffe);
-        // address 0
-        assert_eq!(align_up(0, 128), 0);
-        assert_eq!(align_up(0, 1), 0);
-        assert_eq!(align_up(0, 2), 0);
-        assert_eq!(align_up(0, 0x8000_0000_0000_0000), 0);
-    }
-
-    #[test]
-    fn test_virt_addr_align_up() {
-        // Make sure the 47th bit is extended.
-        assert_eq!(
-            VirtAddr::new(0x7fff_ffff_ffff).align_up(2usize),
-            VirtAddr::new(0x0000_8000_0000_0000)
-        );
-    }
-
-    #[test]
-    fn test_virt_addr_align_down() {
-        // Make sure the 47th bit is extended.
-        assert_eq!(
-            VirtAddr::new(0xffff_8000_0000_0000).align_down(1usize << 48),
-            VirtAddr::new(0)
-        );
-    }
-
-    #[test]
-    fn test_from_ptr_array() {
-        let slice = &[1, 2, 3, 4, 5];
-        // Make sure that from_ptr(slice) is the address of the first element
-        assert_eq!(VirtAddr::from_ptr(slice), VirtAddr::from_ptr(&slice[0]));
     }
 }

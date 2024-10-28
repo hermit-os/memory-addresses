@@ -8,6 +8,30 @@ use core::ops::{Add, AddAssign, Sub, SubAssign};
 use x86_64::structures::paging::page_table::PageTableLevel;
 use x86_64::structures::paging::{PageOffset, PageTableIndex};
 
+/// Const variant of [crate::align_down] with `T=u64`
+#[inline]
+const fn align_down(addr: u64, align: u64) -> u64 {
+    assert!(align.is_power_of_two(), "`align` must be a power of two");
+    addr & !(align - 1)
+}
+
+/// Const variant of [crate::align_up] with `T=u64`
+#[inline]
+const fn align_up(addr: u64, align: u64) -> u64 {
+    assert!(align.is_power_of_two(), "`align` must be a power of two");
+    let align_mask = align - 1;
+    if addr & align_mask == 0 {
+        addr // already aligned
+    } else {
+        // FIXME: Replace with .expect, once `Option::expect` is const.
+        if let Some(aligned) = (addr | align_mask).checked_add(1) {
+            aligned
+        } else {
+            panic!("attempt to add with overflow")
+        }
+    }
+}
+
 /// A canonical 64-bit virtual memory address.
 ///
 /// This is a wrapper type around an `u64`, so it is always 8 bytes, even when compiled
@@ -20,7 +44,7 @@ use x86_64::structures::paging::{PageOffset, PageTableIndex};
 /// are called “canonical”. This type guarantees that it always represents a canonical address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct VirtAddr(u64);
+pub struct VirtAddr(pub u64);
 
 /// A 64-bit physical memory address.
 ///
@@ -33,7 +57,7 @@ pub struct VirtAddr(u64);
 /// to be zero. This type guarantees that it always represents a valid physical address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct PhysAddr(u64);
+pub struct PhysAddr(pub u64);
 
 /// A passed `u64` was not a valid virtual address.
 ///
@@ -600,38 +624,6 @@ impl Sub<PhysAddr> for PhysAddr {
     }
 }
 
-/// Align address downwards.
-///
-/// Returns the greatest `x` with alignment `align` so that `x <= addr`.
-///
-/// Panics if the alignment is not a power of two.
-#[inline]
-pub const fn align_down(addr: u64, align: u64) -> u64 {
-    assert!(align.is_power_of_two(), "`align` must be a power of two");
-    addr & !(align - 1)
-}
-
-/// Align address upwards.
-///
-/// Returns the smallest `x` with alignment `align` so that `x >= addr`.
-///
-/// Panics if the alignment is not a power of two or if an overflow occurs.
-#[inline]
-pub const fn align_up(addr: u64, align: u64) -> u64 {
-    assert!(align.is_power_of_two(), "`align` must be a power of two");
-    let align_mask = align - 1;
-    if addr & align_mask == 0 {
-        addr // already aligned
-    } else {
-        // FIXME: Replace with .expect, once `Option::expect` is const.
-        if let Some(aligned) = (addr | align_mask).checked_add(1) {
-            aligned
-        } else {
-            panic!("attempt to add with overflow")
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -756,23 +748,6 @@ mod tests {
             ),
             None
         );
-    }
-
-    #[test]
-    pub fn test_align_up() {
-        // align 1
-        assert_eq!(align_up(0, 1), 0);
-        assert_eq!(align_up(1234, 1), 1234);
-        assert_eq!(align_up(0xffff_ffff_ffff_ffff, 1), 0xffff_ffff_ffff_ffff);
-        // align 2
-        assert_eq!(align_up(0, 2), 0);
-        assert_eq!(align_up(1233, 2), 1234);
-        assert_eq!(align_up(0xffff_ffff_ffff_fffe, 2), 0xffff_ffff_ffff_fffe);
-        // address 0
-        assert_eq!(align_up(0, 128), 0);
-        assert_eq!(align_up(0, 1), 0);
-        assert_eq!(align_up(0, 2), 0);
-        assert_eq!(align_up(0, 0x8000_0000_0000_0000), 0);
     }
 
     #[test]
