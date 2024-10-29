@@ -11,28 +11,12 @@ env:
 jobs:
   release:
     name: Create new release
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            filename_suffix: "${{ github.ref_name }}-linux-amd64"
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Adapted from: https://github.com/mkroening/edu-sync/blob/main/.github/workflows/release.yml
-      - run: gh release create ${{ github.ref }} --draft --title "Uhyve ${{ github.ref_name }}"
-        if: startsWith(matrix.os, 'ubuntu')
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release
-      - name: Create archive
+      - run: gh release create ${{ github.ref }} --draft --title "memory_addresses ${{ github.ref_name }}"
+      - name: Create release
         run: |
-          DIST=uhyve-${{ matrix.filename_suffix }}
-          mkdir $DIST
-
-          mv target/release/memory_addresses $DIST
-          cp README.md $DIST
-          cp LICENSE-* $DIST
-
-          tar czf $DIST.tar.gz $DIST
-          echo "FILE=$DIST.tar.gz" >> $GITHUB_ENV
-      - run: gh release upload ${{ github.ref }} $FILE
+          for FILE in README.md LICENSE-*; do
+            gh release upload ${{ github.ref }} $FILE
+          done
