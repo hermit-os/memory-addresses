@@ -45,6 +45,11 @@ impl VirtAddr {
     }
 
     /// Creates a new virtual address, without any checks.
+    ///
+    /// # Safety
+    ///
+    /// This is actually safe for the fallback type, but for compatibility with
+    /// real address types, this is marked as `unsafe`.
     #[inline]
     pub const unsafe fn new_unsafe(addr: usize) -> VirtAddr {
         VirtAddr(addr)

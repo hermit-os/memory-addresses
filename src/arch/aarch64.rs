@@ -65,6 +65,12 @@ impl VirtAddr {
     }
 
     /// Creates a new virtual address, without any checks.
+    ///
+    /// # Safety
+    ///
+    /// This can produce invalid virtual addresses, that can lead to downstream
+    /// UB when using it e.g. in paging. Ensure that `addr` is a valid virtual
+    /// address.
     #[inline]
     pub const unsafe fn new_unsafe(addr: u64) -> VirtAddr {
         VirtAddr(addr)
