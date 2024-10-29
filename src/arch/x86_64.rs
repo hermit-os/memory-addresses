@@ -4,6 +4,8 @@ use core::fmt;
 #[cfg(feature = "step_trait")]
 use core::iter::Step;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
+#[cfg(feature = "conv-x86")]
+use x86::bits64::paging::{PAddr as x86_PAddr, VAddr as x86_VAddr};
 
 use x86_64::structures::paging::page_table::PageTableLevel;
 use x86_64::structures::paging::{PageOffset, PageTableIndex};
@@ -297,6 +299,60 @@ impl VirtAddr {
     }
 }
 
+#[cfg(feature = "conv-x86_64")]
+impl From<x86_64::VirtAddr> for VirtAddr {
+    fn from(addr: x86_64::VirtAddr) -> Self {
+        Self(addr.as_u64())
+    }
+}
+#[cfg(feature = "conv-x86_64")]
+impl From<&x86_64::VirtAddr> for VirtAddr {
+    fn from(addr: &x86_64::VirtAddr) -> Self {
+        Self(addr.as_u64())
+    }
+}
+
+#[cfg(feature = "conv-x86_64")]
+impl From<VirtAddr> for x86_64::VirtAddr {
+    fn from(addr: VirtAddr) -> x86_64::VirtAddr {
+        x86_64::VirtAddr::new(addr.0)
+    }
+}
+
+#[cfg(feature = "conv-x86_64")]
+impl From<&VirtAddr> for x86_64::VirtAddr {
+    fn from(addr: &VirtAddr) -> x86_64::VirtAddr {
+        x86_64::VirtAddr::new(addr.0)
+    }
+}
+
+#[cfg(feature = "conv-x86")]
+impl From<x86_VAddr> for VirtAddr {
+    fn from(addr: x86_VAddr) -> Self {
+        Self(addr.as_u64())
+    }
+}
+#[cfg(feature = "conv-x86")]
+impl From<&x86_VAddr> for VirtAddr {
+    fn from(addr: &x86_VAddr) -> Self {
+        Self(addr.as_u64())
+    }
+}
+
+#[cfg(feature = "conv-x86")]
+impl From<VirtAddr> for x86_VAddr {
+    fn from(addr: VirtAddr) -> x86_VAddr {
+        x86_VAddr(addr.0)
+    }
+}
+
+#[cfg(feature = "conv-x86")]
+impl From<&VirtAddr> for x86_VAddr {
+    fn from(addr: &VirtAddr) -> x86_VAddr {
+        x86_VAddr(addr.0)
+    }
+}
+
 impl fmt::Debug for VirtAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("VirtAddr")
@@ -540,6 +596,60 @@ impl PhysAddr {
     #[inline]
     pub(crate) const fn is_aligned_u64(self, align: u64) -> bool {
         self.align_down_u64(align).as_u64() == self.as_u64()
+    }
+}
+
+#[cfg(feature = "conv-x86_64")]
+impl From<x86_64::PhysAddr> for PhysAddr {
+    fn from(addr: x86_64::PhysAddr) -> Self {
+        Self(addr.as_u64())
+    }
+}
+#[cfg(feature = "conv-x86_64")]
+impl From<&x86_64::PhysAddr> for PhysAddr {
+    fn from(addr: &x86_64::PhysAddr) -> Self {
+        Self(addr.as_u64())
+    }
+}
+
+#[cfg(feature = "conv-x86_64")]
+impl From<PhysAddr> for x86_64::PhysAddr {
+    fn from(addr: PhysAddr) -> x86_64::PhysAddr {
+        x86_64::PhysAddr::new(addr.0)
+    }
+}
+
+#[cfg(feature = "conv-x86_64")]
+impl From<&PhysAddr> for x86_64::PhysAddr {
+    fn from(addr: &PhysAddr) -> x86_64::PhysAddr {
+        x86_64::PhysAddr::new(addr.0)
+    }
+}
+
+#[cfg(feature = "conv-x86")]
+impl From<x86_PAddr> for PhysAddr {
+    fn from(addr: x86_PAddr) -> Self {
+        Self(addr.as_u64())
+    }
+}
+#[cfg(feature = "conv-x86")]
+impl From<&x86_PAddr> for PhysAddr {
+    fn from(addr: &x86_PAddr) -> Self {
+        Self(addr.as_u64())
+    }
+}
+
+#[cfg(feature = "conv-x86")]
+impl From<PhysAddr> for x86_PAddr {
+    fn from(addr: PhysAddr) -> x86_PAddr {
+        x86_PAddr(addr.0)
+    }
+}
+
+#[cfg(feature = "conv-x86")]
+impl From<&PhysAddr> for x86_PAddr {
+    fn from(addr: &PhysAddr) -> x86_PAddr {
+        x86_PAddr(addr.0)
     }
 }
 

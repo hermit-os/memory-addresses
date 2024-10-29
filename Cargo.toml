@@ -16,6 +16,7 @@ edition = "2021"
 [dependencies]
 cfg-if = "1.0.0"
 num = "0.4.3"
+x86 = { version = "0.52.0", default-features = false, optional = true }
 x86_64 = { version = "0.15.1", default-features = false, optional = true }
 
 [features]
@@ -23,3 +24,6 @@ default = ["x86_64", "aarch64"]
 step_trait = []
 x86_64 = ["dep:x86_64"]
 aarch64 = []
+conversions = ["conv-x86", "conv-x86_64"]
+conv-x86 = ["dep:x86"]
+conv-x86_64 = ["dep:x86_64"]
