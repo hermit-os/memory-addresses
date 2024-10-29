@@ -23,7 +23,7 @@ jobs:
       - run: gh release create ${{ github.ref }} --draft --title "Uhyve ${{ github.ref_name }}"
         if: startsWith(matrix.os, 'ubuntu')
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo build --release --locked
+      - run: cargo build --release
       - name: Create archive
         run: |
           DIST=uhyve-${{ matrix.filename_suffix }}
