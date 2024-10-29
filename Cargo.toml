@@ -14,11 +14,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+cfg-if = "1.0.0"
 num = "0.4.3"
-# TODO: put this behind a feature flag
-x86_64 = { version = "0.15.1", default-features = false }
+x86_64 = { version = "0.15.1", default-features = false, optional = true }
 
 [features]
-default = ["instructions"]
-instructions = []
+default = ["x86_64", "aarch64"]
 step_trait = []
+x86_64 = ["dep:x86_64"]
+aarch64 = []

@@ -7,14 +7,15 @@ use core::ops::{BitAnd, BitOr};
 
 pub mod arch;
 
-#[cfg(target_arch = "x86_64")]
-pub use crate::arch::x86_64::{PhysAddr, VirtAddr};
-
-#[cfg(target_arch = "aarch64")]
-pub use crate::arch::aarch64::{PhysAddr, VirtAddr};
-
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-pub use crate::arch::fallback::{PhysAddr, VirtAddr};
+cfg_if::cfg_if! {
+    if #[cfg(all(target_arch = "x86_64", feature = "x86_64"))] {
+        pub use crate::arch::x86_64::{PhysAddr, VirtAddr};
+    } else if #[cfg(all(target_arch = "aarch64", feature = "aarch64"))] {
+        pub use crate::arch::aarch64::{PhysAddr, VirtAddr};
+    } else {
+        pub use crate::arch::fallback::{PhysAddr, VirtAddr};
+    }
+}
 
 /// Align number upwards.
 ///
