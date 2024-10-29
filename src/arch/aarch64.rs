@@ -486,7 +486,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_virt_addr_align_up_overflow() {
-        let v = VirtAddr::new(0xffff_ffff_ffff_ffff).align_up(2u64);
+        let _ = VirtAddr::new(0xffff_ffff_ffff_ffff).align_up(2u64);
     }
 
     #[test]

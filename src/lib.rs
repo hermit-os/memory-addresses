@@ -2,8 +2,8 @@
 
 #![no_std]
 
-use num::traits::{int::PrimInt, ToBytes};
 use core::ops::{BitAnd, BitOr};
+use num::traits::{int::PrimInt, ToBytes};
 
 pub mod arch;
 
@@ -24,8 +24,7 @@ cfg_if::cfg_if! {
 /// Panics if the alignment is not a power of two or if an overflow occurs.
 // TODO: Make const one day
 #[inline]
-pub fn align_up<T: PrimInt + ToBytes + BitAnd + BitOr>(addr: T, align: T) -> T
-{
+pub fn align_up<T: PrimInt + ToBytes + BitAnd + BitOr>(addr: T, align: T) -> T {
     assert_eq!(align.count_ones(), 1, "`align` must be a power of two");
     let align_mask = align.checked_sub(&T::one()).unwrap();
     if addr & align_mask == T::zero() {
@@ -65,11 +64,17 @@ mod tests {
         // align 1
         assert_eq!(align_up(1, 1), 1);
         assert_eq!(align_up(1234, 1), 1234);
-        assert_eq!(align_up(0xffff_ffff_ffff_ffff_u64, 1), 0xffff_ffff_ffff_ffff);
+        assert_eq!(
+            align_up(0xffff_ffff_ffff_ffff_u64, 1),
+            0xffff_ffff_ffff_ffff
+        );
         // align 2
         assert_eq!(align_up(1, 2), 2);
         assert_eq!(align_up(1233, 2), 1234);
-        assert_eq!(align_up(0xffff_ffff_ffff_fffe_u64, 2), 0xffff_ffff_ffff_fffe);
+        assert_eq!(
+            align_up(0xffff_ffff_ffff_fffe_u64, 2),
+            0xffff_ffff_ffff_fffe
+        );
         // align 4096
         assert_eq!(align_up(0x1234_1234, 0x1000), 0x1234_2000);
         // address 0
@@ -84,12 +89,21 @@ mod tests {
         // align 1
         assert_eq!(align_down(0, 1), 0);
         assert_eq!(align_down(1234, 1), 1234);
-        assert_eq!(align_down(0xffff_ffff_ffff_ffff_u64, 1), 0xffff_ffff_ffff_ffff);
+        assert_eq!(
+            align_down(0xffff_ffff_ffff_ffff_u64, 1),
+            0xffff_ffff_ffff_ffff
+        );
         // align 2
         assert_eq!(align_down(0, 2), 0);
         assert_eq!(align_down(1233, 2), 1232);
-        assert_eq!(align_down(0xffff_ffff_ffff_fffe_u64, 2), 0xffff_ffff_ffff_fffe);
-        assert_eq!(align_down(0xffff_ffff_ffff_ffff_u64, 2), 0xffff_ffff_ffff_fffe);
+        assert_eq!(
+            align_down(0xffff_ffff_ffff_fffe_u64, 2),
+            0xffff_ffff_ffff_fffe
+        );
+        assert_eq!(
+            align_down(0xffff_ffff_ffff_ffff_u64, 2),
+            0xffff_ffff_ffff_fffe
+        );
         // align 4096
         assert_eq!(align_down(0x1234_1234, 0x1000), 0x1234_1000);
         // address 0
