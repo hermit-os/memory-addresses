@@ -29,12 +29,10 @@ pub fn align_up<T: PrimInt + ToBytes + BitAnd + BitOr>(addr: T, align: T) -> T {
     let align_mask = align.checked_sub(&T::one()).unwrap();
     if addr & align_mask == T::zero() {
         addr // already aligned
+    } else if let Some(aligned) = (addr | align_mask).checked_add(&T::one()) {
+        aligned
     } else {
-        if let Some(aligned) = (addr | align_mask).checked_add(&T::one()) {
-            aligned
-        } else {
-            panic!("attempt to add with overflow")
-        }
+        panic!("attempt to add with overflow")
     }
 }
 
