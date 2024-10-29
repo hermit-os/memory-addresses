@@ -1,6 +1,9 @@
-/// Universal crate for machine address types.
+//! Universal crate for machine address types.
+
+#![no_std]
+
 use num::traits::{int::PrimInt, ToBytes};
-use std::ops::{BitAnd, BitOr};
+use core::ops::{BitAnd, BitOr};
 
 pub mod arch;
 
