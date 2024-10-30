@@ -184,45 +184,22 @@ impl VirtAddr {
     /// This function panics if the resulting address is higher than
     /// `0xffff_ffff_ffff_ffff`.
     #[inline]
-    pub fn align_up<U>(self, align: U) -> Self
-    where
-        U: Into<u64>,
-    {
-        VirtAddr::new_truncate(align_up(self.0, align.into()))
+    pub fn align_up(self, align: u64) -> Self {
+        VirtAddr::new_truncate(align_up(self.0, align))
     }
 
     /// Aligns the virtual address downwards to the given alignment.
     ///
     /// See the `align_down` function for more information.
     #[inline]
-    pub fn align_down<U>(self, align: U) -> Self
-    where
-        U: Into<u64>,
-    {
-        self.align_down_u64(align.into())
-    }
-
-    /// Aligns the virtual address downwards to the given alignment.
-    ///
-    /// See the `align_down` function for more information.
-    #[inline]
-    pub(crate) const fn align_down_u64(self, align: u64) -> Self {
+    pub fn align_down(self, align: u64) -> Self {
         VirtAddr::new_truncate(align_down(self.0, align))
     }
 
     /// Checks whether the virtual address has the demanded alignment.
     #[inline]
-    pub fn is_aligned<U>(self, align: U) -> bool
-    where
-        U: Into<u64>,
-    {
-        self.is_aligned_u64(align.into())
-    }
-
-    /// Checks whether the virtual address has the demanded alignment.
-    #[inline]
-    pub(crate) const fn is_aligned_u64(self, align: u64) -> bool {
-        self.align_down_u64(align).as_u64() == self.as_u64()
+    pub fn is_aligned(self, align: u64) -> bool {
+        self.align_down(align).as_u64() == self.as_u64()
     }
 
     /// Returns the 12-bit page offset of this virtual address.
@@ -568,34 +545,14 @@ impl PhysAddr {
     ///
     /// See the `align_down` function for more information.
     #[inline]
-    pub fn align_down<U>(self, align: U) -> Self
-    where
-        U: Into<u64>,
-    {
-        self.align_down_u64(align.into())
-    }
-
-    /// Aligns the physical address downwards to the given alignment.
-    ///
-    /// See the `align_down` function for more information.
-    #[inline]
-    pub(crate) const fn align_down_u64(self, align: u64) -> Self {
+    pub fn align_down(self, align: u64) -> Self {
         PhysAddr(align_down(self.0, align))
     }
 
     /// Checks whether the physical address has the demanded alignment.
     #[inline]
-    pub fn is_aligned<U>(self, align: U) -> bool
-    where
-        U: Into<u64>,
-    {
-        self.is_aligned_u64(align.into())
-    }
-
-    /// Checks whether the physical address has the demanded alignment.
-    #[inline]
-    pub(crate) const fn is_aligned_u64(self, align: u64) -> bool {
-        self.align_down_u64(align).as_u64() == self.as_u64()
+    pub fn is_aligned(self, align: u64) -> bool {
+        self.align_down(align).as_u64() == self.as_u64()
     }
 }
 
