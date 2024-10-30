@@ -129,6 +129,12 @@ impl VirtAddr {
         self.as_ptr::<T>() as *mut T
     }
 
+    #[cfg(target_pointer_width = "64")]
+    // if the target_pointer_width is 64, usize = u64 so we can safely transform.
+    pub const fn as_usize(&self) -> usize {
+        self.0 as usize
+    }
+
     /// Checks whether the virtual address has the demanded alignment.
     #[inline]
     pub fn is_aligned(self, align: u64) -> bool {
@@ -218,6 +224,14 @@ impl Align<u64> for VirtAddr {
     #[inline]
     fn align_up(self, align: u64) -> Self {
         Self::new_truncate(self.0.align_up(align))
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely transform.
+impl From<usize> for VirtAddr {
+    fn from(addr: usize) -> VirtAddr {
+        Self::new_truncate(addr as u64)
     }
 }
 
@@ -360,6 +374,12 @@ impl PhysAddr {
             Err(PhysAddrNotValid(addr))
         }
     }
+
+    #[cfg(target_pointer_width = "64")]
+    // if the target_pointer_width is 64, usize = u64 so we can safely transform.
+    pub const fn as_usize(&self) -> usize {
+        self.0 as usize
+    }
 }
 
 impl Align<u64> for PhysAddr {
@@ -371,6 +391,14 @@ impl Align<u64> for PhysAddr {
     #[inline]
     fn align_up(self, align: u64) -> Self {
         Self::new(self.as_u64().align_up(align))
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely transform.
+impl From<usize> for PhysAddr {
+    fn from(addr: usize) -> PhysAddr {
+        Self::new_truncate(addr as u64)
     }
 }
 
