@@ -87,30 +87,21 @@ impl VirtAddr {
 
     /// Aligns the virtual address upwards to the given alignment.
     #[inline]
-    pub fn align_up<U>(self, align: U) -> Self
-    where
-        U: Into<usize>,
-    {
-        VirtAddr::new(align_up(self.0, align.into()))
+    pub fn align_up(self, align: usize) -> Self {
+        VirtAddr::new(align_up(self.0, align))
     }
 
     /// Aligns the virtual address downwards to the given alignment.
     ///
     /// See the `align_down` function for more information.
     #[inline]
-    pub fn align_down<U>(self, align: U) -> Self
-    where
-        U: Into<usize>,
-    {
-        VirtAddr::new_truncate(align_down(self.0, align.into()))
+    pub fn align_down(self, align: usize) -> Self {
+        VirtAddr::new_truncate(align_down(self.0, align))
     }
 
     /// Checks whether the virtual address has the demanded alignment.
     #[inline]
-    pub fn is_aligned<U>(self, align: U) -> bool
-    where
-        U: Into<usize>,
-    {
+    pub fn is_aligned(self, align: usize) -> bool {
         self.align_down(align).0 == self.0
     }
 }
@@ -258,30 +249,21 @@ impl PhysAddr {
     ///
     /// See the `align_up` function for more information.
     #[inline]
-    pub fn align_up<U>(self, align: U) -> Self
-    where
-        U: Into<usize>,
-    {
-        PhysAddr::new(align_up(self.0, align.into()))
+    pub fn align_up(self, align: usize) -> Self {
+        PhysAddr::new(align_up(self.0, align))
     }
 
     /// Aligns the physical address downwards to the given alignment.
     ///
     /// See the `align_down` function for more information.
     #[inline]
-    pub fn align_down<U>(self, align: U) -> Self
-    where
-        U: Into<usize>,
-    {
-        Self(align_down(self.0, align.into()))
+    pub fn align_down(self, align: usize) -> Self {
+        Self(align_down(self.0, align))
     }
 
     /// Checks whether the physical address has the demanded alignment.
     #[inline]
-    pub fn is_aligned<U>(self, align: U) -> bool
-    where
-        U: Into<usize>,
-    {
+    pub fn is_aligned(self, align: usize) -> bool {
         self.align_down(align).0 == self.0
     }
 }
