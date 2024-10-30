@@ -3,6 +3,9 @@
 #![no_std]
 
 pub mod arch;
+#[macro_use]
+pub(crate) mod macros;
+pub(crate) use macros::impl_address;
 
 cfg_if::cfg_if! {
     if #[cfg(all(target_arch = "x86_64", feature = "x86_64"))] {
