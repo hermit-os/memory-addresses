@@ -8,14 +8,14 @@ use align_address::Align;
 /// A virtual memory address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct VirtAddr(pub usize);
+pub struct VirtAddr(usize);
 
 impl_address!(VirtAddr, usize);
 
 /// A physical memory address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct PhysAddr(pub usize);
+pub struct PhysAddr(usize);
 
 impl_address!(PhysAddr, usize);
 

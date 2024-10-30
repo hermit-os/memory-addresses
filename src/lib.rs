@@ -141,8 +141,8 @@ mod tests {
 
     #[test]
     pub fn virtaddr_new_truncate() {
-        assert_eq!(VirtAddr::new_truncate(0), VirtAddr(0));
-        assert_eq!(VirtAddr::new_truncate(123), VirtAddr(123));
+        assert_eq!(VirtAddr::new_truncate(0), VirtAddr::new(0));
+        assert_eq!(VirtAddr::new_truncate(123), VirtAddr::new(123));
     }
 
     #[test]

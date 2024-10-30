@@ -14,7 +14,7 @@ use align_address::Align;
 /// that are not encoded in this type.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct VirtAddr(pub u64);
+pub struct VirtAddr(u64);
 
 impl_address!(VirtAddr, u64);
 
@@ -126,7 +126,7 @@ impl From<usize> for PhysAddr {
 /// not larger than 56 bits. This type enforces this limit.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct PhysAddr(pub u64);
+pub struct PhysAddr(u64);
 
 impl_address!(PhysAddr, u64);
 
