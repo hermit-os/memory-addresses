@@ -22,7 +22,7 @@ use x86_64::structures::paging::{PageOffset, PageTableIndex};
 /// are called “canonical”. This type guarantees that it always represents a canonical address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct VirtAddr(pub u64);
+pub struct VirtAddr(u64);
 
 impl_address!(VirtAddr, u64);
 
@@ -37,7 +37,7 @@ impl_address!(VirtAddr, u64);
 /// to be zero. This type guarantees that it always represents a valid physical address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct PhysAddr(pub u64);
+pub struct PhysAddr(u64);
 
 impl_address!(PhysAddr, u64);
 
