@@ -1,8 +1,9 @@
 //! Physical and virtual addresses manipulation
 
-use crate::{align_down, align_up};
 use core::fmt;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
+
+use align_address::Align;
 
 /// A virtual memory address on `aarch64`.
 ///
@@ -105,25 +106,17 @@ impl VirtAddr {
     pub const fn is_null(self) -> bool {
         self.0 == 0
     }
+}
 
-    /// Aligns the virtual address upwards to the given alignment.
+impl Align<u64> for VirtAddr {
     #[inline]
-    pub fn align_up(self, align: u64) -> Self {
-        VirtAddr::new_truncate(align_up(self.0, align))
+    fn align_down(self, align: u64) -> Self {
+        Self::new_truncate(self.0.align_down(align))
     }
 
-    /// Aligns the virtual address downwards to the given alignment.
-    ///
-    /// See the `align_down` function for more information.
     #[inline]
-    pub fn align_down(self, align: u64) -> Self {
-        VirtAddr::new_truncate(align_down(self.0, align))
-    }
-
-    /// Checks whether the virtual address has the demanded alignment.
-    #[inline]
-    pub fn is_aligned(self, align: u64) -> bool {
-        self.align_down(align).0 == self.0
+    fn align_up(self, align: u64) -> Self {
+        Self::new_truncate(self.0.align_up(align))
     }
 }
 
@@ -282,27 +275,17 @@ impl PhysAddr {
     pub const fn is_null(self) -> bool {
         self.0 == 0
     }
+}
 
-    /// Aligns the physical address upwards to the given alignment.
-    ///
-    /// See the `align_up` function for more information.
+impl Align<u64> for PhysAddr {
     #[inline]
-    pub fn align_up(self, align: u64) -> Self {
-        PhysAddr::new(align_up(self.0, align))
+    fn align_down(self, align: u64) -> Self {
+        Self::new(self.0.align_down(align))
     }
 
-    /// Aligns the physical address downwards to the given alignment.
-    ///
-    /// See the `align_down` function for more information.
     #[inline]
-    pub fn align_down(self, align: u64) -> Self {
-        Self(align_down(self.0, align))
-    }
-
-    /// Checks whether the physical address has the demanded alignment.
-    #[inline]
-    pub fn is_aligned(self, align: u64) -> bool {
-        self.align_down(align).0 == self.0
+    fn align_up(self, align: u64) -> Self {
+        Self::new(self.0.align_up(align))
     }
 }
 

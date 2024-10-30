@@ -1,5 +1,6 @@
 //! Physical and virtual addresses manipulation
 
+use align_address::Align;
 use core::fmt;
 #[cfg(feature = "step_trait")]
 use core::iter::Step;
@@ -9,30 +10,6 @@ use x86::bits64::paging::{PAddr as x86_PAddr, VAddr as x86_VAddr};
 
 use x86_64::structures::paging::page_table::PageTableLevel;
 use x86_64::structures::paging::{PageOffset, PageTableIndex};
-
-/// Const variant of [crate::align_down] with `T=u64`
-#[inline]
-const fn align_down(addr: u64, align: u64) -> u64 {
-    assert!(align.is_power_of_two(), "`align` must be a power of two");
-    addr & !(align - 1)
-}
-
-/// Const variant of [crate::align_up] with `T=u64`
-#[inline]
-const fn align_up(addr: u64, align: u64) -> u64 {
-    assert!(align.is_power_of_two(), "`align` must be a power of two");
-    let align_mask = align - 1;
-    if addr & align_mask == 0 {
-        addr // already aligned
-    } else {
-        // FIXME: Replace with .expect, once `Option::expect` is const.
-        if let Some(aligned) = (addr | align_mask).checked_add(1) {
-            aligned
-        } else {
-            panic!("attempt to add with overflow")
-        }
-    }
-}
 
 /// A canonical 64-bit virtual memory address.
 ///
@@ -175,27 +152,6 @@ impl VirtAddr {
         self.0 == 0
     }
 
-    /// Aligns the virtual address upwards to the given alignment.
-    ///
-    /// See the `align_up` function for more information.
-    ///
-    /// # Panics
-    ///
-    /// This function panics if the resulting address is higher than
-    /// `0xffff_ffff_ffff_ffff`.
-    #[inline]
-    pub fn align_up(self, align: u64) -> Self {
-        VirtAddr::new_truncate(align_up(self.0, align))
-    }
-
-    /// Aligns the virtual address downwards to the given alignment.
-    ///
-    /// See the `align_down` function for more information.
-    #[inline]
-    pub fn align_down(self, align: u64) -> Self {
-        VirtAddr::new_truncate(align_down(self.0, align))
-    }
-
     /// Checks whether the virtual address has the demanded alignment.
     #[inline]
     pub fn is_aligned(self, align: u64) -> bool {
@@ -273,6 +229,18 @@ impl VirtAddr {
         }
 
         Some(unsafe { Self::new_unsafe(addr) })
+    }
+}
+
+impl Align<u64> for VirtAddr {
+    #[inline]
+    fn align_down(self, align: u64) -> Self {
+        Self::new_truncate(self.0.align_down(align))
+    }
+
+    #[inline]
+    fn align_up(self, align: u64) -> Self {
+        Self::new_truncate(self.0.align_up(align))
     }
 }
 
@@ -524,35 +492,17 @@ impl PhysAddr {
     pub const fn is_null(self) -> bool {
         self.0 == 0
     }
+}
 
-    /// Aligns the physical address upwards to the given alignment.
-    ///
-    /// See the `align_up` function for more information.
-    ///
-    /// # Panics
-    ///
-    /// This function panics if the resulting address has a bit in the range 52
-    /// to 64 set.
+impl Align<u64> for PhysAddr {
     #[inline]
-    pub fn align_up<U>(self, align: U) -> Self
-    where
-        U: Into<u64>,
-    {
-        PhysAddr::new(align_up(self.0, align.into()))
+    fn align_down(self, align: u64) -> Self {
+        Self::new(self.as_u64().align_down(align))
     }
 
-    /// Aligns the physical address downwards to the given alignment.
-    ///
-    /// See the `align_down` function for more information.
     #[inline]
-    pub fn align_down(self, align: u64) -> Self {
-        PhysAddr(align_down(self.0, align))
-    }
-
-    /// Checks whether the physical address has the demanded alignment.
-    #[inline]
-    pub fn is_aligned(self, align: u64) -> bool {
-        self.align_down(align).as_u64() == self.as_u64()
+    fn align_up(self, align: u64) -> Self {
+        Self::new(self.as_u64().align_up(align))
     }
 }
 

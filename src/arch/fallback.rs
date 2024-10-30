@@ -1,8 +1,9 @@
 //! Physical and virtual addresses manipulation
 
-use crate::{align_down, align_up};
 use core::fmt;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
+
+use align_address::Align;
 
 /// A virtual memory address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -84,25 +85,17 @@ impl VirtAddr {
     pub const fn is_null(self) -> bool {
         self.0 == 0
     }
+}
 
-    /// Aligns the virtual address upwards to the given alignment.
+impl Align<usize> for VirtAddr {
     #[inline]
-    pub fn align_up(self, align: usize) -> Self {
-        VirtAddr::new(align_up(self.0, align))
+    fn align_down(self, align: usize) -> Self {
+        Self::new_truncate(self.0.align_down(align))
     }
 
-    /// Aligns the virtual address downwards to the given alignment.
-    ///
-    /// See the `align_down` function for more information.
     #[inline]
-    pub fn align_down(self, align: usize) -> Self {
-        VirtAddr::new_truncate(align_down(self.0, align))
-    }
-
-    /// Checks whether the virtual address has the demanded alignment.
-    #[inline]
-    pub fn is_aligned(self, align: usize) -> bool {
-        self.align_down(align).0 == self.0
+    fn align_up(self, align: usize) -> Self {
+        Self::new_truncate(self.0.align_up(align))
     }
 }
 
@@ -244,27 +237,17 @@ impl PhysAddr {
     pub const fn is_null(self) -> bool {
         self.0 == 0
     }
+}
 
-    /// Aligns the physical address upwards to the given alignment.
-    ///
-    /// See the `align_up` function for more information.
+impl Align<usize> for PhysAddr {
     #[inline]
-    pub fn align_up(self, align: usize) -> Self {
-        PhysAddr::new(align_up(self.0, align))
+    fn align_down(self, align: usize) -> Self {
+        Self::new(self.0.align_down(align))
     }
 
-    /// Aligns the physical address downwards to the given alignment.
-    ///
-    /// See the `align_down` function for more information.
     #[inline]
-    pub fn align_down(self, align: usize) -> Self {
-        Self(align_down(self.0, align))
-    }
-
-    /// Checks whether the physical address has the demanded alignment.
-    #[inline]
-    pub fn is_aligned(self, align: usize) -> bool {
-        self.align_down(align).0 == self.0
+    fn align_up(self, align: usize) -> Self {
+        Self::new(self.0.align_up(align))
     }
 }
 
