@@ -20,7 +20,6 @@ x86_64 = { version = "0.15.1", default-features = false, optional = true }
 
 [features]
 default = ["x86_64", "aarch64"]
-step_trait = []
 x86_64 = ["dep:x86_64"]
 aarch64 = []
 conversions = ["conv-x86", "conv-x86_64"]
