@@ -24,7 +24,7 @@ cfg_if::cfg_if! {
 /// Panics if the alignment is not a power of two or if an overflow occurs.
 // TODO: Make const one day
 #[inline]
-pub fn align_up<T: PrimInt + ToBytes + BitAnd + BitOr>(addr: T, align: T) -> T {
+fn align_up<T: PrimInt + ToBytes + BitAnd + BitOr>(addr: T, align: T) -> T {
     assert_eq!(align.count_ones(), 1, "`align` must be a power of two");
     let align_mask = align.checked_sub(&T::one()).unwrap();
     if addr & align_mask == T::zero() {
@@ -42,7 +42,7 @@ pub fn align_up<T: PrimInt + ToBytes + BitAnd + BitOr>(addr: T, align: T) -> T {
 ///
 /// Panics if the alignment is not a power of two.
 #[inline]
-pub fn align_down<T: PrimInt>(addr: T, align: T) -> T {
+fn align_down<T: PrimInt>(addr: T, align: T) -> T {
     assert_eq!(align.count_ones(), 1, "`align` must be a power of two");
     addr & !(align - T::one())
 }
