@@ -71,6 +71,70 @@ pub trait MemoryAddress:
     fn raw(self) -> Self::RAW;
 }
 
+/// Error type for [`AddrRange`]
+#[non_exhaustive]
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum AddrRangeError {
+    /// The range was constructed with the end before the start
+    EndBeforeStart,
+}
+
+impl fmt::Display for AddrRangeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::EndBeforeStart => {
+                f.write_str("Range end address can't be smaller than range start address")
+            }
+        }
+    }
+}
+
+/// A memory range.
+pub struct AddrRange<T: MemoryAddress> {
+    start: T,
+    end: T,
+}
+impl<T: MemoryAddress> AddrRange<T> {
+    /// Construct a new memory range from `start` (inclusive) to `end` (exclusive).
+    pub fn new(start: T, end: T) -> Result<Self, AddrRangeError> {
+        if end < start {
+            return Err(AddrRangeError::EndBeforeStart);
+        }
+        Ok(Self { start, end })
+    }
+
+    /// Produces an [`AddrIter`] to iterate over this memory range.
+    pub fn iter(&self) -> AddrIter<T> {
+        AddrIter {
+            current: self.start,
+            end: self.end,
+        }
+    }
+
+    /// Check, wether `element` is part of the address range.
+    pub fn contains(&self, element: &T) -> bool {
+        element.raw() >= self.start.raw() && element.raw() < self.end.raw()
+    }
+}
+
+/// An iterator over a memory range
+pub struct AddrIter<T: MemoryAddress> {
+    current: T,
+    end: T,
+}
+impl<T: MemoryAddress> Iterator for AddrIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current >= self.end {
+            None
+        } else {
+            let ret = Some(self.current);
+            self.current += 1.into();
+            ret
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -86,5 +150,30 @@ mod tests {
         let slice = &[1, 2, 3, 4, 5];
         // Make sure that from_ptr(slice) is the address of the first element
         assert_eq!(VirtAddr::from_ptr(slice), VirtAddr::from_ptr(&slice[0]));
+    }
+
+    #[test]
+    fn test_addr_range() {
+        let r = AddrRange::new(VirtAddr::new(0x0), VirtAddr::new(0x3)).unwrap();
+        assert!(r.contains(&VirtAddr::new(0x0)));
+        assert!(r.contains(&VirtAddr::new(0x1)));
+        assert!(!r.contains(&VirtAddr::new(0x3)));
+        let mut i = r.iter();
+        assert_eq!(i.next().unwrap(), VirtAddr::new(0x0));
+        assert_eq!(i.next().unwrap(), VirtAddr::new(0x1));
+        assert_eq!(i.next().unwrap(), VirtAddr::new(0x2));
+        assert!(i.next().is_none());
+
+        for (i, a) in r.iter().enumerate() {
+            assert_eq!(a.raw() as usize, i);
+        }
+
+        let r = AddrRange::new(PhysAddr::new(0x2), PhysAddr::new(0x4)).unwrap();
+        let mut i = r.iter();
+        assert_eq!(i.next().unwrap(), PhysAddr::new(0x2));
+        assert_eq!(i.next().unwrap(), PhysAddr::new(0x3));
+        assert!(i.next().is_none());
+
+        assert_eq!(r.iter().map(|a| a.raw() as usize).sum::<usize>(), 0x5);
     }
 }
