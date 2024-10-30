@@ -128,3 +128,47 @@ impl Align<usize> for PhysAddr {
         Self::new(self.0.align_up(align))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{AddrRange, MemoryAddress};
+
+    #[test]
+    pub fn virtaddr_new_truncate() {
+        assert_eq!(VirtAddr::new_truncate(0), VirtAddr(0));
+        assert_eq!(VirtAddr::new_truncate(123), VirtAddr(123));
+    }
+
+    #[test]
+    fn test_from_ptr_array() {
+        let slice = &[1, 2, 3, 4, 5];
+        // Make sure that from_ptr(slice) is the address of the first element
+        assert_eq!(VirtAddr::from_ptr(slice), VirtAddr::from_ptr(&slice[0]));
+    }
+
+    #[test]
+    fn test_addr_range() {
+        let r = AddrRange::new(VirtAddr::new(0x0), VirtAddr::new(0x3)).unwrap();
+        assert!(r.contains(&VirtAddr::new(0x0)));
+        assert!(r.contains(&VirtAddr::new(0x1)));
+        assert!(!r.contains(&VirtAddr::new(0x3)));
+        let mut i = r.iter();
+        assert_eq!(i.next().unwrap(), VirtAddr::new(0x0));
+        assert_eq!(i.next().unwrap(), VirtAddr::new(0x1));
+        assert_eq!(i.next().unwrap(), VirtAddr::new(0x2));
+        assert!(i.next().is_none());
+
+        for (i, a) in r.iter().enumerate() {
+            assert_eq!(a.raw(), i);
+        }
+
+        let r = AddrRange::new(PhysAddr::new(0x2), PhysAddr::new(0x4)).unwrap();
+        let mut i = r.iter();
+        assert_eq!(i.next().unwrap(), PhysAddr::new(0x2));
+        assert_eq!(i.next().unwrap(), PhysAddr::new(0x3));
+        assert!(i.next().is_none());
+
+        assert_eq!(r.iter().map(|a| a.raw()).sum::<usize>(), 0x5);
+    }
+}
