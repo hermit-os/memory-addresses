@@ -2,6 +2,13 @@
 
 #![no_std]
 
+use core::fmt;
+use core::fmt::Debug;
+use core::ops::{
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Sub,
+    SubAssign,
+};
+
 pub mod arch;
 #[macro_use]
 pub(crate) mod macros;
@@ -15,6 +22,53 @@ cfg_if::cfg_if! {
     } else {
         pub use crate::arch::fallback::{PhysAddr, VirtAddr};
     }
+}
+
+/// Trait that marks memory addresses.
+///
+/// An address must be a wrapper around a numeric value and thus behave like a number.
+pub trait MemoryAddress:
+    PartialEq
+    + Eq
+    + PartialOrd
+    + Ord
+    + Copy
+    + Clone
+    + Sized
+    + BitAnd<<Self>::RAW, Output = Self::RAW>
+    + BitAndAssign<<Self>::RAW>
+    + BitOr<<Self>::RAW, Output = Self::RAW>
+    + BitOrAssign<<Self>::RAW>
+    + BitXor<<Self>::RAW, Output = Self::RAW>
+    + BitXorAssign<<Self>::RAW>
+    + Add<<Self>::RAW>
+    + AddAssign<<Self>::RAW>
+    + Sub<Self, Output = Self::RAW>
+    + Sub<<Self>::RAW, Output = Self>
+    + SubAssign<<Self>::RAW>
+    + fmt::Binary
+    + fmt::LowerHex
+    + fmt::UpperHex
+    + fmt::Octal
+    + fmt::Pointer
+{
+    /// Inner address type
+    type RAW: Copy
+        + PartialEq
+        + Eq
+        + PartialOrd
+        + Ord
+        + Not<Output = Self::RAW>
+        + Add<Output = Self::RAW>
+        + Sub<Output = Self::RAW>
+        + BitAnd<Output = Self::RAW>
+        + BitOr<Output = Self::RAW>
+        + BitXor<Output = Self::RAW>
+        + Debug
+        + From<u8>;
+
+    /// Get the raw underlying address value.
+    fn raw(self) -> Self::RAW;
 }
 
 #[cfg(test)]

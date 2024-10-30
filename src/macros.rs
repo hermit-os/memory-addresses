@@ -4,6 +4,14 @@
 /// Inspired/adopted from https://github.com/rust-vmm/vm-memory
 macro_rules! impl_address {
     ($T:ident, $V:ty) => {
+        impl $crate::MemoryAddress for $T {
+            type RAW = $V;
+
+            fn raw(self) -> Self::RAW {
+                self.0
+            }
+        }
+
         impl $T {
             /// Creates a new address, without any checks.
             ///
