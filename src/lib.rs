@@ -5,8 +5,8 @@
 use core::fmt;
 use core::fmt::Debug;
 use core::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Sub,
-    SubAssign,
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl,
+    ShlAssign, Shr, ShrAssign, Sub, SubAssign,
 };
 
 pub mod arch;
@@ -48,6 +48,10 @@ pub trait MemoryAddress:
     + Sub<Self, Output = Self::RAW>
     + Sub<<Self>::RAW, Output = Self>
     + SubAssign<<Self>::RAW>
+    + Shr<usize, Output = Self>
+    + ShrAssign<usize>
+    + Shl<usize, Output = Self>
+    + ShlAssign<usize>
     + fmt::Binary
     + fmt::LowerHex
     + fmt::UpperHex
