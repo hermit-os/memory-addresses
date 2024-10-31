@@ -38,7 +38,7 @@ macro_rules! impl_address {
             }
 
             paste::paste! {
-                /// Converts the address to an `[< $V >]`.
+                #[doc = "Converts the address to an `" $V "`."]
                 #[inline]
                 pub const fn [< as_ $V >] (self) -> $V {
                     self.0
