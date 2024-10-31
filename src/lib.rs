@@ -71,7 +71,8 @@ pub trait MemoryAddress:
         + BitOr<Output = Self::RAW>
         + BitXor<Output = Self::RAW>
         + Debug
-        + From<u8>;
+        + From<u8>
+        + TryInto<usize, Error: Debug>;
 
     /// Get the raw underlying address value.
     fn raw(self) -> Self::RAW;
@@ -97,8 +98,10 @@ impl fmt::Display for AddrRangeError {
 
 /// A memory range.
 pub struct AddrRange<T: MemoryAddress> {
-    start: T,
-    end: T,
+    /// Starting address
+    pub start: T,
+    /// End address (exclusive)
+    pub end: T,
 }
 impl<T: MemoryAddress> AddrRange<T> {
     /// Construct a new memory range from `start` (inclusive) to `end` (exclusive).
@@ -120,6 +123,15 @@ impl<T: MemoryAddress> AddrRange<T> {
     /// Check, wether `element` is part of the address range.
     pub fn contains(&self, element: &T) -> bool {
         element.raw() >= self.start.raw() && element.raw() < self.end.raw()
+    }
+
+    /// Amount of addresses in the range.
+    ///
+    /// `AddrRange`s are half open, so the range from `0x0` to `0x1` has length 1.
+    pub fn length(&self) -> usize {
+        (self.end.raw() - self.start.raw())
+            .try_into()
+            .expect("address range is larger than the architecture's usize")
     }
 }
 
