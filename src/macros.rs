@@ -131,6 +131,36 @@ macro_rules! impl_address {
             }
         }
 
+        impl core::ops::Shl<usize> for $T {
+            type Output = $T;
+            #[inline]
+            fn shl(self, rhs: usize) -> Self::Output {
+                Self::new_truncate(self.0 << rhs)
+            }
+        }
+
+        impl core::ops::Shr<usize> for $T {
+            type Output = $T;
+            #[inline]
+            fn shr(self, rhs: usize) -> Self::Output {
+                Self::new_truncate(self.0 >> rhs)
+            }
+        }
+
+        impl core::ops::ShlAssign<usize> for $T {
+            #[inline]
+            fn shl_assign(&mut self, rhs: usize) {
+                *self = Self::new_truncate(self.0 << rhs);
+            }
+        }
+
+        impl core::ops::ShrAssign<usize> for $T {
+            #[inline]
+            fn shr_assign(&mut self, rhs: usize) {
+                *self = Self::new_truncate(self.0 >> rhs);
+            }
+        }
+
         impl From<$V> for $T {
             #[inline]
             fn from(addr: $V) -> $T {
