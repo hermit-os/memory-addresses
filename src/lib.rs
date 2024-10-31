@@ -19,6 +19,8 @@ cfg_if::cfg_if! {
         pub use crate::arch::x86_64::{PhysAddr, VirtAddr};
     } else if #[cfg(all(target_arch = "aarch64", feature = "aarch64"))] {
         pub use crate::arch::aarch64::{PhysAddr, VirtAddr};
+    } else if #[cfg(all(target_arch = "riscv64", feature = "riscv64"))] {
+        pub use crate::arch::riscv64::{PhysAddr, VirtAddr};
     } else {
         pub use crate::arch::fallback::{PhysAddr, VirtAddr};
     }
