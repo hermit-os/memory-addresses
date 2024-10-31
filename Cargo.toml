@@ -19,9 +19,10 @@ x86 = { version = "0.52.0", default-features = false, optional = true }
 x86_64 = { version = "0.15.1", default-features = false, optional = true }
 
 [features]
-default = ["x86_64", "aarch64"]
+default = ["x86_64", "aarch64", "riscv64"]
 x86_64 = ["dep:x86_64"]
 aarch64 = []
+riscv64 = []
 conversions = ["conv-x86", "conv-x86_64"]
 conv-x86 = ["dep:x86"]
 conv-x86_64 = ["dep:x86_64"]
