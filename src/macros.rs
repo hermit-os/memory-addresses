@@ -170,7 +170,7 @@ macro_rules! impl_address {
 
         impl core::fmt::Debug for $T {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                f.debug_tuple("$T")
+                f.debug_tuple(stringify!($T))
                     .field(&format_args!("{:#x}", self.0))
                     .finish()
             }
