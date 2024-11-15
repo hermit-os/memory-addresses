@@ -113,6 +113,44 @@ impl From<usize> for VirtAddr {
 }
 
 #[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely add
+impl core::ops::Add<usize> for VirtAddr {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: usize) -> Self::Output {
+        VirtAddr::new(self.0 + rhs as u64)
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely add
+impl core::ops::AddAssign<usize> for VirtAddr {
+    #[inline]
+    fn add_assign(&mut self, rhs: usize) {
+        *self = *self + rhs;
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely sub
+impl core::ops::Sub<usize> for VirtAddr {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: usize) -> Self::Output {
+        VirtAddr::new(self.0.checked_sub(rhs as u64).unwrap())
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely sub
+impl core::ops::SubAssign<usize> for VirtAddr {
+    #[inline]
+    fn sub_assign(&mut self, rhs: usize) {
+        *self = *self - rhs;
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
 // if the target_pointer_width is 64, usize = u64 so we can safely transform.
 impl From<usize> for PhysAddr {
     fn from(addr: usize) -> PhysAddr {
@@ -179,6 +217,44 @@ impl PhysAddr {
     // if the target_pointer_width is 64, usize = u64 so we can safely transform.
     pub const fn as_usize(&self) -> usize {
         self.0 as usize
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely add
+impl core::ops::Add<usize> for PhysAddr {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: usize) -> Self::Output {
+        PhysAddr::new(self.0 + rhs as u64)
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely add
+impl core::ops::AddAssign<usize> for PhysAddr {
+    #[inline]
+    fn add_assign(&mut self, rhs: usize) {
+        *self = *self + rhs;
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely sub
+impl core::ops::Sub<usize> for PhysAddr {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: usize) -> Self::Output {
+        PhysAddr::new(self.0.checked_sub(rhs as u64).unwrap())
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely sub
+impl core::ops::SubAssign<usize> for PhysAddr {
+    #[inline]
+    fn sub_assign(&mut self, rhs: usize) {
+        *self = *self - rhs;
     }
 }
 
