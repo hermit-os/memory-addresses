@@ -213,6 +213,44 @@ impl Align<u64> for PhysAddr {
     }
 }
 
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely add
+impl core::ops::Add<usize> for PhysAddr {
+    type Output = Self;
+    #[inline]
+    fn add(self, rhs: usize) -> Self::Output {
+        PhysAddr::new(self.0 + rhs as u64)
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely add
+impl core::ops::AddAssign<usize> for PhysAddr {
+    #[inline]
+    fn add_assign(&mut self, rhs: usize) {
+        *self = *self + rhs;
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely sub
+impl core::ops::Sub<usize> for PhysAddr {
+    type Output = Self;
+    #[inline]
+    fn sub(self, rhs: usize) -> Self::Output {
+        PhysAddr::new(self.0.checked_sub(rhs as u64).unwrap())
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+// if the target_pointer_width is 64, usize = u64 so we can safely sub
+impl core::ops::SubAssign<usize> for PhysAddr {
+    #[inline]
+    fn sub_assign(&mut self, rhs: usize) {
+        *self = *self - rhs;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
