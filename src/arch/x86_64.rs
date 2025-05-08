@@ -24,7 +24,7 @@ use x86_64::structures::paging::{PageOffset, PageTableIndex};
 #[repr(transparent)]
 pub struct VirtAddr(u64);
 
-impl_address!(VirtAddr, u64);
+impl_address!(VirtAddr, u64, as_u64);
 
 /// A 64-bit physical memory address.
 ///
@@ -39,7 +39,7 @@ impl_address!(VirtAddr, u64);
 #[repr(transparent)]
 pub struct PhysAddr(u64);
 
-impl_address!(PhysAddr, u64);
+impl_address!(PhysAddr, u64, as_u64);
 
 /// A passed `u64` was not a valid virtual address.
 ///

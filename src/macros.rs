@@ -3,7 +3,7 @@
 /// Macro that implements the functionalities that every address type has.
 /// Inspired/adopted from https://github.com/rust-vmm/vm-memory
 macro_rules! impl_address {
-    ($T:ident, $V:ty) => {
+    ($T:ident, $V:ty, $as_V:ident) => {
         impl $crate::MemoryAddress for $T {
             type RAW = $V;
 
@@ -37,12 +37,10 @@ macro_rules! impl_address {
                 $T::new(0)
             }
 
-            paste::paste! {
-                #[doc = "Converts the address to an `" $V "`."]
-                #[inline]
-                pub const fn [< as_ $V >] (self) -> $V {
-                    self.0
-                }
+            #[doc = concat!("Converts the address to an `", stringify!($V), "`.")]
+            #[inline]
+            pub const fn $as_V(self) -> $V {
+                self.0
             }
         }
 
@@ -80,9 +78,7 @@ macro_rules! impl_address {
             type Output = $V;
             #[inline]
             fn sub(self, rhs: $T) -> Self::Output {
-                paste::paste! {
-                    self.[< as _$V >]().checked_sub(rhs.[< as_ $V >]()).unwrap()
-                }
+                self.$as_V().checked_sub(rhs.$as_V()).unwrap()
             }
         }
 

@@ -16,7 +16,7 @@ use align_address::Align;
 #[repr(transparent)]
 pub struct VirtAddr(u64);
 
-impl_address!(VirtAddr, u64);
+impl_address!(VirtAddr, u64, as_u64);
 
 /// An invalid virtual address.
 ///
@@ -166,7 +166,7 @@ impl From<usize> for PhysAddr {
 #[repr(transparent)]
 pub struct PhysAddr(u64);
 
-impl_address!(PhysAddr, u64);
+impl_address!(PhysAddr, u64, as_u64);
 
 /// A passed `u64` was not a valid physical address.
 ///
