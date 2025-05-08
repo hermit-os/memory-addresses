@@ -8,7 +8,7 @@ license = "MIT/Apache-2.0"
 name = "memory_addresses"
 readme = "README.md"
 repository = "https://github.com/hermit-os/memory-addresses"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 
 [dependencies]
