@@ -10,14 +10,14 @@ use align_address::Align;
 #[repr(transparent)]
 pub struct VirtAddr(usize);
 
-impl_address!(VirtAddr, usize);
+impl_address!(VirtAddr, usize, as_usize);
 
 /// A physical memory address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct PhysAddr(usize);
 
-impl_address!(PhysAddr, usize);
+impl_address!(PhysAddr, usize, as_usize);
 
 /// An invalid virtual address
 pub struct VirtAddrNotValid(pub usize);
