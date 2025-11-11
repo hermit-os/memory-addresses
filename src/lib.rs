@@ -76,6 +76,14 @@ pub trait MemoryAddress:
 
     /// Get the raw underlying address value.
     fn raw(self) -> Self::RAW;
+
+    /// Performs an add operation with `rhs`
+    /// returning `None` if the operation overflowed or resulted in an invalid address.
+    fn checked_add(self, rhs: Self::RAW) -> Option<Self>;
+
+    /// Performs a sub operation with `rhs`
+    /// returning `None` if the operation overflowed or resulted in an invalid address.
+    fn checked_sub(self, rhs: Self::RAW) -> Option<Self>;
 }
 
 /// Error type for [`AddrRange`]
