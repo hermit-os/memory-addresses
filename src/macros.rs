@@ -10,6 +10,14 @@ macro_rules! impl_address {
             fn raw(self) -> Self::RAW {
                 self.0
             }
+
+            fn checked_add(self, rhs: Self::RAW) -> Option<Self> {
+                Self::try_new(self.0.checked_add(rhs)?).ok()
+            }
+
+            fn checked_sub(self, rhs: Self::RAW) -> Option<Self> {
+                Self::try_new(self.0.checked_sub(rhs)?).ok()
+            }
         }
 
         impl $T {
