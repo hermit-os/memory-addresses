@@ -4,6 +4,7 @@
 
 use core::fmt;
 use core::fmt::Debug;
+use core::iter::FusedIterator;
 use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl,
     ShlAssign, Shr, ShrAssign, Sub, SubAssign,
@@ -148,10 +149,16 @@ pub struct AddrIter<T: MemoryAddress> {
     current: T,
     end: T,
 }
+
+impl<T: MemoryAddress> AddrIter<T> {
+    fn exhausted(&self) -> bool {
+        self.current >= self.end
+    }
+}
 impl<T: MemoryAddress> Iterator for AddrIter<T> {
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current >= self.end {
+        if self.exhausted() {
             None
         } else {
             let ret = Some(self.current);
@@ -159,7 +166,61 @@ impl<T: MemoryAddress> Iterator for AddrIter<T> {
             ret
         }
     }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        (self.end.raw() - self.current.raw())
+            .try_into()
+            .expect("address range is larger than the architecture's usize")
+    }
+
+    fn last(self) -> Option<Self::Item> {
+        self.max()
+    }
+
+    fn max(self) -> Option<Self::Item>
+    where
+        Self: Sized,
+        Self::Item: Ord,
+    {
+        Some(self.end)
+    }
+
+    fn min(self) -> Option<Self::Item> {
+        Some(self.current)
+    }
+
+    fn is_sorted(self) -> bool
+    where
+        Self: Sized,
+        Self::Item: PartialOrd,
+    {
+        true
+    }
 }
+
+impl<T: MemoryAddress> DoubleEndedIterator for AddrIter<T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if self.exhausted() {
+            None
+        } else {
+            self.end -= 1.into();
+            Some(self.end)
+        }
+    }
+}
+
+impl<T: MemoryAddress> ExactSizeIterator for AddrIter<T> {
+    fn len(&self) -> usize {
+        (self.end.raw() - self.current.raw())
+            .try_into()
+            .expect("address range is larger than the architecture's usize")
+    }
+}
+
+impl<T: MemoryAddress> FusedIterator for AddrIter<T> {}
 
 #[cfg(test)]
 mod tests {
@@ -192,6 +253,21 @@ mod tests {
 
         for (i, a) in r.iter().enumerate() {
             assert_eq!(a.raw() as usize, i);
+        }
+
+        {
+            let mut range = r.iter();
+            assert_eq!(range.next_back(), Some(VirtAddr::new(0x2)));
+            assert_eq!(range.next_back(), Some(VirtAddr::new(0x1)));
+            assert_eq!(range.next_back(), Some(VirtAddr::new(0x0)));
+            assert_eq!(range.next_back(), None);
+            assert_eq!(range.next(), None);
+
+            let mut range = r.iter();
+            assert_eq!(range.next(), Some(VirtAddr::new(0x0)));
+            assert_eq!(range.next_back(), Some(VirtAddr::new(0x2)));
+            assert_eq!(range.next(), Some(VirtAddr::new(0x1)));
+            assert_eq!(range.next_back(), None);
         }
 
         let r = AddrRange::new(PhysAddr::new(0x2), PhysAddr::new(0x4)).unwrap();
