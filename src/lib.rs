@@ -5,6 +5,7 @@
 use core::fmt;
 use core::fmt::Debug;
 use core::iter::FusedIterator;
+use core::marker::PhantomData;
 use core::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl,
     ShlAssign, Shr, ShrAssign, Sub, SubAssign,
@@ -125,7 +126,8 @@ impl<T: MemoryAddress> AddrRange<T> {
     pub fn iter(&self) -> AddrIter<T> {
         AddrIter {
             current: self.start,
-            end: self.end,
+            end: Some(self.end),
+            _phantom: PhantomData,
         }
     }
 
@@ -145,20 +147,36 @@ impl<T: MemoryAddress> AddrRange<T> {
 }
 
 /// An iterator over a memory range
-pub struct AddrIter<T: MemoryAddress> {
+#[allow(private_bounds)]
+pub struct AddrIter<T: MemoryAddress, I: IterInclusivity = NonInclusive> {
     current: T,
-    end: T,
+    end: Option<T>, // None here indicates that this is exhausted
+    _phantom: PhantomData<I>,
 }
 
-impl<T: MemoryAddress> AddrIter<T> {
-    fn exhausted(&self) -> bool {
-        self.current >= self.end
+trait IterInclusivity {
+    fn exhausted<T: Ord>(start: &T, end: &T) -> bool;
+}
+pub enum NonInclusive {}
+
+impl IterInclusivity for NonInclusive {
+    fn exhausted<T: Ord>(start: &T, end: &T) -> bool {
+        start >= end
     }
 }
-impl<T: MemoryAddress> Iterator for AddrIter<T> {
+
+pub enum Inclusive {}
+
+impl IterInclusivity for Inclusive {
+    fn exhausted<T: Ord>(start: &T, end: &T) -> bool {
+        start > end
+    }
+}
+
+impl<T: MemoryAddress, I: IterInclusivity> Iterator for AddrIter<T, I> {
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
-        if self.exhausted() {
+        if I::exhausted(&self.current, &self.end?) {
             None
         } else {
             let ret = Some(self.current);
@@ -171,7 +189,8 @@ impl<T: MemoryAddress> Iterator for AddrIter<T> {
     where
         Self: Sized,
     {
-        (self.end.raw() - self.current.raw())
+        let Some(end) = self.end else { return 0 };
+        (end.raw() - self.current.raw())
             .try_into()
             .expect("address range is larger than the architecture's usize")
     }
@@ -185,7 +204,7 @@ impl<T: MemoryAddress> Iterator for AddrIter<T> {
         Self: Sized,
         Self::Item: Ord,
     {
-        Some(self.end)
+        Some(self.end.unwrap_or(self.current))
     }
 
     fn min(self) -> Option<Self::Item> {
@@ -201,26 +220,80 @@ impl<T: MemoryAddress> Iterator for AddrIter<T> {
     }
 }
 
-impl<T: MemoryAddress> DoubleEndedIterator for AddrIter<T> {
+impl<T: MemoryAddress> DoubleEndedIterator for AddrIter<T, NonInclusive> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        if self.exhausted() {
+        if NonInclusive::exhausted(&self.current, &self.end?) {
             None
         } else {
-            self.end -= 1.into();
-            Some(self.end)
+            let one: T::RAW = 1u8.into();
+            self.end = Some(self.end? - one);
+            self.end
         }
     }
 }
 
-impl<T: MemoryAddress> ExactSizeIterator for AddrIter<T> {
+impl<T: MemoryAddress> DoubleEndedIterator for AddrIter<T, Inclusive> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        if Inclusive::exhausted(&self.current, &self.end?) {
+            None
+        } else {
+            let ret = self.end?;
+
+            // We need to be able to step back to `0`.
+            // We return `0` when self.end is currently `0`.
+            // But then we subtract `0` by `1` triggering a sub-with-overflow
+            // When we trigger a sub-with-overflow we return early and dont decrement `self.end`
+            // The next call to self.next() will return as exhausted and the
+            let Some(step) = self.end?.checked_sub(1.into()) else {
+                self.end = None;
+                return Some(ret);
+            };
+            self.end = Some(step);
+            Some(ret)
+        }
+    }
+}
+
+impl<T: MemoryAddress> ExactSizeIterator for AddrIter<T, Inclusive> {
     fn len(&self) -> usize {
-        (self.end.raw() - self.current.raw())
+        let Some(end) = self.end else { return 0 };
+        (end - self.current)
+            .try_into()
+            .expect("address range is larger than the architecture's usize")
+            + 1
+    }
+}
+
+impl<T: MemoryAddress> ExactSizeIterator for AddrIter<T, NonInclusive> {
+    fn len(&self) -> usize {
+        let Some(end) = self.end else { return 0 };
+        (end - self.current)
             .try_into()
             .expect("address range is larger than the architecture's usize")
     }
 }
 
 impl<T: MemoryAddress> FusedIterator for AddrIter<T> {}
+
+impl<T: MemoryAddress> From<core::ops::Range<T>> for AddrIter<T, NonInclusive> {
+    fn from(range: core::ops::Range<T>) -> Self {
+        Self {
+            current: range.start,
+            end: Some(range.end),
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<T: MemoryAddress> From<core::ops::RangeInclusive<T>> for AddrIter<T, Inclusive> {
+    fn from(range: core::ops::RangeInclusive<T>) -> Self {
+        Self {
+            current: *range.start(),
+            end: Some(*range.end()),
+            _phantom: PhantomData,
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -277,5 +350,29 @@ mod tests {
         assert!(i.next().is_none());
 
         assert_eq!(r.iter().map(|a| a.raw() as usize).sum::<usize>(), 0x5);
+    }
+
+    #[test]
+    fn test_iter_incl() {
+        let range = VirtAddr::new(0x0)..=VirtAddr::new(0x3);
+        let mut i = AddrIter::from(range.clone());
+        assert_eq!(i.next().unwrap(), VirtAddr::new(0x0));
+        assert_eq!(i.next().unwrap(), VirtAddr::new(0x1));
+        assert_eq!(i.next().unwrap(), VirtAddr::new(0x2));
+        assert_eq!(i.next().unwrap(), VirtAddr::new(0x3));
+
+        let mut i = AddrIter::from(range.clone());
+        assert_eq!(i.next_back(), Some(VirtAddr::new(0x3)));
+        assert_eq!(i.next_back(), Some(VirtAddr::new(0x2)));
+        assert_eq!(i.next_back(), Some(VirtAddr::new(0x1)));
+        assert_eq!(i.next_back(), Some(VirtAddr::new(0x0)));
+        assert_eq!(i.next_back(), None);
+
+        let mut i = AddrIter::from(range.clone());
+        assert_eq!(i.next_back(), Some(VirtAddr::new(0x3)));
+        assert_eq!(i.next(), Some(VirtAddr::new(0x0)));
+        assert_eq!(i.next_back(), Some(VirtAddr::new(0x2)));
+        assert_eq!(i.next(), Some(VirtAddr::new(0x1)));
+        assert_eq!(i.next_back(), None);
     }
 }
