@@ -74,7 +74,8 @@ pub trait MemoryAddress:
         + BitXor<Output = Self::RAW>
         + Debug
         + From<u8>
-        + TryInto<usize, Error: Debug>;
+        + TryInto<usize, Error: Debug>
+        + TryFrom<usize, Error: Debug>;
 
     /// Get the raw underlying address value.
     fn raw(self) -> Self::RAW;
@@ -201,18 +202,21 @@ impl<T: MemoryAddress, I: IterInclusivity> Iterator for AddrIter<T, I> {
         }
     }
 
-    fn count(self) -> usize
-    where
-        Self: Sized,
-    {
-        let Some(end) = self.end else { return 0 };
-        (end.raw() - self.current.raw())
-            .try_into()
-            .expect("address range is larger than the architecture's usize")
-    }
-
     fn last(self) -> Option<Self::Item> {
         self.max()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        let Ok(n): Result<T::RAW, _> = n.try_into() else {
+            // Fail to cast indicates that n > T::RAW::MAX, so we explicitly exhaust self.
+            self.end.take();
+            return None;
+        };
+        self.current += n;
+        if I::exhausted(&self.current, &self.end?) {
+            return None;
+        }
+        Some(self.current)
     }
 
     fn max(self) -> Option<Self::Item>
@@ -246,6 +250,22 @@ impl<T: MemoryAddress> DoubleEndedIterator for AddrIter<T, NonInclusive> {
             self.end
         }
     }
+    fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
+        if n == 0 {
+            return self.next_back(); // Avoids sub-with-overflow below
+        }
+        let Ok(n): Result<T::RAW, _> = n.try_into() else {
+            // Fail to cast indicates that n > T::RAW::MAX, so we explicitly exhaust self.
+            self.end.take();
+            return None;
+        };
+        let Some(ret) = self.end?.checked_sub(n) else {
+            self.end.take();
+            return None;
+        };
+        self.end = Some(ret);
+        self.next_back()
+    }
 }
 
 impl<T: MemoryAddress> DoubleEndedIterator for AddrIter<T, Inclusive> {
@@ -267,6 +287,24 @@ impl<T: MemoryAddress> DoubleEndedIterator for AddrIter<T, Inclusive> {
             self.end = Some(step);
             Some(ret)
         }
+    }
+
+    fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
+        if n == 0 {
+            return self.next_back();
+        }
+        let Ok(n): Result<T::RAW, _> = n.try_into() else {
+            // Fail to cast indicates that n > T::RAW::MAX, so we explicitly exhaust self.
+            self.end.take();
+            return None;
+        };
+
+        let Some(ret) = self.end?.checked_sub(n) else {
+            self.end.take();
+            return None;
+        };
+        self.end = Some(ret);
+        self.end
     }
 }
 
@@ -344,6 +382,11 @@ mod tests {
             assert_eq!(a.raw() as usize, i);
         }
 
+        assert_eq!(r.iter().nth(0), Some(VirtAddr::new(0x0)));
+        assert_eq!(r.iter().nth(1), Some(VirtAddr::new(0x1)));
+        assert_eq!(r.iter().nth(2), Some(VirtAddr::new(0x2)));
+        assert_eq!(r.iter().nth(3), None);
+
         {
             let mut range = r.iter();
             assert_eq!(range.next_back(), Some(VirtAddr::new(0x2)));
@@ -357,6 +400,11 @@ mod tests {
             assert_eq!(range.next_back(), Some(VirtAddr::new(0x2)));
             assert_eq!(range.next(), Some(VirtAddr::new(0x1)));
             assert_eq!(range.next_back(), None);
+
+            assert_eq!(r.iter().nth_back(0), Some(VirtAddr::new(0x2)));
+            assert_eq!(r.iter().nth_back(1), Some(VirtAddr::new(0x1)));
+            assert_eq!(r.iter().nth_back(2), Some(VirtAddr::new(0x0)));
+            assert_eq!(r.iter().nth_back(3), None);
         }
 
         let r = AddrRange::new(PhysAddr::new(0x2), PhysAddr::new(0x4)).unwrap();
@@ -390,5 +438,40 @@ mod tests {
         assert_eq!(i.next_back(), Some(VirtAddr::new(0x2)));
         assert_eq!(i.next(), Some(VirtAddr::new(0x1)));
         assert_eq!(i.next_back(), None);
+
+        assert_eq!(
+            AddrIter::from(range.clone()).nth(0),
+            Some(VirtAddr::new(0x0))
+        );
+        assert_eq!(
+            AddrIter::from(range.clone()).nth(1),
+            Some(VirtAddr::new(0x1))
+        );
+        assert_eq!(
+            AddrIter::from(range.clone()).nth(2),
+            Some(VirtAddr::new(0x2))
+        );
+        assert_eq!(
+            AddrIter::from(range.clone()).nth(3),
+            Some(VirtAddr::new(0x3))
+        );
+        assert_eq!(AddrIter::from(range.clone()).nth(4), None);
+    }
+
+    #[test]
+    fn iterator_assert_sizes() {
+        let range_incl = VirtAddr::new(0x0)..=VirtAddr::new(0x3);
+        assert_eq!(
+            AddrIter::from(range_incl.clone()).count(),
+            AddrIter::from(range_incl.clone()).len()
+        );
+        assert_eq!(
+            AddrIter::from(range_incl.clone()).count(),
+            AddrIter::from(range_incl.clone()).size_hint().0
+        );
+        assert_eq!(
+            AddrIter::from(range_incl.clone()).count(),
+            AddrIter::from(range_incl.clone()).size_hint().1.unwrap()
+        );
     }
 }
