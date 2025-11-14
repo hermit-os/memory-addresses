@@ -212,7 +212,14 @@ impl<T: MemoryAddress, I: IterInclusivity> Iterator for AddrIter<T, I> {
             self.end.take();
             return None;
         };
-        self.current += n;
+        match self.current.checked_add(n) {
+            Some(n) => self.current = n,
+            None if self.current.raw() < n => {
+                self.end.take();
+                return None;
+            }
+            None => panic!("Attempted to iterate over invalid address"),
+        }
         if I::exhausted(&self.current, &self.end?) {
             return None;
         }
@@ -260,6 +267,9 @@ impl<T: MemoryAddress> DoubleEndedIterator for AddrIter<T, NonInclusive> {
             return None;
         };
         let Some(ret) = self.end?.checked_sub(n) else {
+            if self.end?.raw() < n {
+                panic!("Attempted to iterate over invalid address")
+            }
             self.end.take();
             return None;
         };
@@ -281,6 +291,12 @@ impl<T: MemoryAddress> DoubleEndedIterator for AddrIter<T, Inclusive> {
             // When we trigger a sub-with-overflow we return early and dont decrement `self.end`
             // The next call to self.next() will return as exhausted and the
             let Some(step) = self.end?.checked_sub(1.into()) else {
+                // Check if this was an underflow or a non-canonical address
+                // Panic on non-canonical
+                // We can eat the overhead here because this branch is rare
+                if self.end?.raw() != 0u8.into() {
+                    panic!("Attempted to iterate over invalid address")
+                }
                 self.end = None;
                 return Some(ret);
             };
@@ -300,6 +316,9 @@ impl<T: MemoryAddress> DoubleEndedIterator for AddrIter<T, Inclusive> {
         };
 
         let Some(ret) = self.end?.checked_sub(n) else {
+            if self.end?.raw() < n {
+                panic!("Attempted to iterate over invalid address")
+            }
             self.end.take();
             return None;
         };
