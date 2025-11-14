@@ -154,7 +154,7 @@ pub struct AddrIter<T: MemoryAddress, I: IterInclusivity = NonInclusive> {
     _phantom: PhantomData<I>,
 }
 
-trait IterInclusivity {
+trait IterInclusivity: 'static {
     fn exhausted<T: Ord>(start: &T, end: &T) -> bool;
 }
 pub enum NonInclusive {}
@@ -182,6 +182,22 @@ impl<T: MemoryAddress, I: IterInclusivity> Iterator for AddrIter<T, I> {
             let ret = Some(self.current);
             self.current += 1.into();
             ret
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let Some(end) = self.end else {
+            return (0, Some(0));
+        };
+        let ni_count = (end - self.current)
+            .try_into()
+            .expect("address range is larger than the architecture's usize");
+        if core::any::TypeId::of::<I>() == core::any::TypeId::of::<NonInclusive>() {
+            (ni_count, Some(ni_count))
+        } else if core::any::TypeId::of::<I>() == core::any::TypeId::of::<Inclusive>() {
+            (ni_count + 1, Some(ni_count + 1))
+        } else {
+            unreachable!()
         }
     }
 
