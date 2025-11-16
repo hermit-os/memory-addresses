@@ -155,9 +155,26 @@ pub struct AddrIter<T: MemoryAddress, I: IterInclusivity = NonInclusive> {
     _phantom: PhantomData<I>,
 }
 
+// Note this is deliberately private.
+// Users may need to know about its existence but do not need to implement or use it.
 trait IterInclusivity: 'static {
     fn exhausted<T: Ord>(start: &T, end: &T) -> bool;
 }
+
+/// This marks [AddrIter] as as acting as non-inclusive.
+///
+/// This is the behaviour when using [AddrRange::iter], it can also be constructed using [From].
+///
+///```
+/// # use memory_addresses::AddrIter;
+/// let start = memory_addresses::PhysAddr::new(0);
+/// let end = memory_addresses::PhysAddr::new(0x1000);
+///
+/// for i in AddrIter::from(start..end) {
+///    // ...
+/// }
+/// assert_eq!(AddrIter::from(start..end).last(), Some(memory_addresses::PhysAddr::new(0xfff)))
+/// ```
 pub enum NonInclusive {}
 
 impl IterInclusivity for NonInclusive {
@@ -166,6 +183,20 @@ impl IterInclusivity for NonInclusive {
     }
 }
 
+/// This marks [AddrIter] as as acting as inclusive.
+///
+/// The inclusive variant of [AddrIter] can be constructed using [From].
+///
+///```
+/// # use memory_addresses::AddrIter;
+/// let start = memory_addresses::PhysAddr::new(0);
+/// let end = memory_addresses::PhysAddr::new(0x1000);
+///
+/// for i in AddrIter::from(start..=end) {
+///    // ...
+/// }
+/// assert_eq!(AddrIter::from(start..end).last(), Some(memory_addresses::PhysAddr::new(0x1000)))
+/// ```
 pub enum Inclusive {}
 
 impl IterInclusivity for Inclusive {
