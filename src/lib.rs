@@ -224,11 +224,17 @@ impl<T: MemoryAddress, I: IterInclusivity> Iterator for AddrIter<T, I> {
         let ni_count = (end - self.current)
             .try_into()
             .expect("address range is larger than the architecture's usize");
+
+        // I whis there was a nicer way to do this.
+        // This will determine whether I is `Inclusive` or `NonInclusive` and take the correct branch.
+        // The compiler can determine which branch will be taken at compile time so this doesnt get checked at runtime.
         if core::any::TypeId::of::<I>() == core::any::TypeId::of::<NonInclusive>() {
             (ni_count, Some(ni_count))
         } else if core::any::TypeId::of::<I>() == core::any::TypeId::of::<Inclusive>() {
             (ni_count + 1, Some(ni_count + 1))
         } else {
+            // Explicitly panic when I is not expected.
+            // This should never be possible but it doesnt do any harm.
             unreachable!()
         }
     }
