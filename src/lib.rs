@@ -195,7 +195,7 @@ impl IterInclusivity for NonInclusive {
 /// for i in AddrIter::from(start..=end) {
 ///    // ...
 /// }
-/// assert_eq!(AddrIter::from(start..end).last(), Some(memory_addresses::PhysAddr::new(0x1000)))
+/// assert_eq!(AddrIter::from(start..=end).last(), Some(memory_addresses::PhysAddr::new(0x1000)))
 /// ```
 pub enum Inclusive {}
 
