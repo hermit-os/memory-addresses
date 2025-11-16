@@ -268,7 +268,23 @@ impl<T: MemoryAddress, I: IterInclusivity> Iterator for AddrIter<T, I> {
         Self: Sized,
         Self::Item: Ord,
     {
-        Some(self.end.unwrap_or(self.current))
+        let end = self.end?;
+        if core::any::TypeId::of::<I>() == core::any::TypeId::of::<NonInclusive>() {
+            let Some(ret) = end.checked_sub(1.into()) else {
+                if end.raw() == 0u8.into() || end == self.current {
+                    return None; // underflow (which is ok) or exhausted.
+                } else {
+                    panic!("Attempted to iterate over invalid address")
+                }
+            };
+            Some(ret)
+        } else if core::any::TypeId::of::<I>() == core::any::TypeId::of::<Inclusive>() {
+            Some(end)
+        } else {
+            // Explicitly panic when I is not expected.
+            // This should never be possible but it doesnt do any harm.
+            unreachable!()
+        }
     }
 
     fn min(self) -> Option<Self::Item> {
