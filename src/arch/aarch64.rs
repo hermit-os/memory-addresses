@@ -18,6 +18,8 @@ pub struct VirtAddr(u64);
 
 impl_address!(VirtAddr, u64, as_u64);
 
+impl crate::VirtualMemoryAddress for VirtAddr {}
+
 /// An invalid virtual address.
 ///
 /// Virutal addresses on aarch64 are invalid, if the topmost 12 bits are not the same.
@@ -167,6 +169,8 @@ impl From<usize> for PhysAddr {
 pub struct PhysAddr(u64);
 
 impl_address!(PhysAddr, u64, as_u64);
+
+impl crate::PhysicalMemoryAddress for PhysAddr {}
 
 /// A passed `u64` was not a valid physical address.
 ///

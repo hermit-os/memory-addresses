@@ -26,6 +26,8 @@ pub struct VirtAddr(u64);
 
 impl_address!(VirtAddr, u64, as_u64);
 
+impl crate::VirtualMemoryAddress for VirtAddr {}
+
 /// A 64-bit physical memory address.
 ///
 /// This is a wrapper type around an `u64`, so it is always 8 bytes, even when compiled
@@ -40,6 +42,8 @@ impl_address!(VirtAddr, u64, as_u64);
 pub struct PhysAddr(u64);
 
 impl_address!(PhysAddr, u64, as_u64);
+
+impl crate::PhysicalMemoryAddress for PhysAddr {}
 
 /// A passed `u64` was not a valid virtual address.
 ///
