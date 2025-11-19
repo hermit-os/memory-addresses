@@ -161,6 +161,29 @@ impl<T: MemoryAddress> Iterator for AddrIter<T> {
     }
 }
 
+/// A trait to mark an address type as a virtual address.
+///
+/// A virtual address an address that can be accessed within a software context.
+///
+/// If the system uses paging and is using identity mapped addressing then an address type can
+/// implement both `VirtualAddress` and [PhysicalMemoryAddress].
+/// This requires the implementation to ensure that the address is valid as both a physical and virtual address.
+///
+/// Public functions that expect an identity mapped address (e.g. [x86_64::structures::paging::Mapper::identity_map])
+/// should use preferably use [VirtualMemoryAddress], using [PhysicalMemoryAddress] is acceptable however
+/// `PhysicalAddress + VirtualAddress` should be avoided.
+// This is for ergonomics reasons. If `crate::VirtAddr` implements `PhysicalAddress` too then this
+// can (obviously) cause problems.
+pub trait VirtualMemoryAddress: MemoryAddress {}
+
+/// A trait to mark an address type as a physical address.
+///
+/// A physical address is an address on the global memory bus which is accessible to both the CPU
+/// and peripheral hardware.
+///
+/// *see also [VirtualMemoryAddress]*
+pub trait PhysicalMemoryAddress: MemoryAddress {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
