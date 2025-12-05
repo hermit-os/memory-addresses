@@ -439,6 +439,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::iter_nth_zero)]
     fn test_addr_range() {
         let r = AddrRange::new(VirtAddr::new(0x0), VirtAddr::new(0x3)).unwrap();
         assert!(r.contains(&VirtAddr::new(0x0)));
@@ -489,6 +490,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::iter_nth_zero)]
     fn test_iter_incl() {
         let range = VirtAddr::new(0x0)..=VirtAddr::new(0x3);
         let mut i = AddrIter::from(range.clone());
