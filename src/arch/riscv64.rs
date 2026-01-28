@@ -381,7 +381,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_phys_addr_align_up_overflow() {
-        PhysAddr::new(0x00ff_ffff_ffff_ffff).align_up(2u64);
+        PhysAddr::new(0x003f_ffff_ffff_ffff).align_up(2u64);
     }
 
     #[test]
