@@ -99,8 +99,9 @@ impl Align<u64> for VirtAddr {
     }
 
     #[inline]
-    fn align_up(self, align: u64) -> Self {
-        Self::new_truncate(self.0.align_up(align))
+    fn checked_align_up(self, align: u64) -> Option<Self> {
+        let addr = self.0.checked_align_up(align)?;
+        Some(Self::new_truncate(addr))
     }
 }
 
@@ -265,8 +266,10 @@ impl Align<u64> for PhysAddr {
     }
 
     #[inline]
-    fn align_up(self, align: u64) -> Self {
-        Self::new(self.0.align_up(align))
+    fn checked_align_up(self, align: u64) -> Option<Self> {
+        let addr = self.0.checked_align_up(align)?;
+        let this = Self::try_new(addr).ok()?;
+        Some(this)
     }
 }
 
@@ -336,6 +339,10 @@ mod tests {
             VirtAddr::new(0x000f_ffff_ffff_ffff).align_up(2u64),
             VirtAddr::new(0xfff0_0000_0000_0000)
         );
+        assert_eq!(
+            VirtAddr::new(0xffff_ffff_ffff_ffff).checked_align_up(2u64),
+            None
+        )
     }
 
     #[test]
@@ -355,15 +362,11 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn test_virt_addr_align_up_overflow() {
-        let _ = VirtAddr::new(0xffff_ffff_ffff_ffff).align_up(2u64);
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_phys_addr_align_up_overflow() {
-        PhysAddr::new(0x00ff_ffff_ffff_ffff).align_up(2u64);
+    fn test_phys_addr_align_up() {
+        assert_eq!(
+            PhysAddr::new(0x00ff_ffff_ffff_ffff).checked_align_up(2u64),
+            None
+        );
     }
 
     #[test]
