@@ -12,7 +12,7 @@ version = "0.2.4"
 edition = "2021"
 
 [dependencies]
-align-address = "0.3.0"
+align-address = "0.4"
 cfg-if = "1.0.0"
 x86 = { version = "0.52.0", default-features = false, optional = true }
 x86_64 = { version = "0.15.1", default-features = false, optional = true }

@@ -75,8 +75,9 @@ impl Align<usize> for VirtAddr {
     }
 
     #[inline]
-    fn align_up(self, align: usize) -> Self {
-        Self::new_truncate(self.0.align_up(align))
+    fn checked_align_up(self, align: usize) -> Option<Self> {
+        let addr = self.0.checked_align_up(align)?;
+        Some(Self::new_truncate(addr))
     }
 }
 
@@ -124,8 +125,10 @@ impl Align<usize> for PhysAddr {
     }
 
     #[inline]
-    fn align_up(self, align: usize) -> Self {
-        Self::new(self.0.align_up(align))
+    fn checked_align_up(self, align: usize) -> Option<Self> {
+        let addr = self.0.checked_align_up(align)?;
+        let this = Self::try_new(addr).ok()?;
+        Some(this)
     }
 }
 
