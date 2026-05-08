@@ -7,6 +7,7 @@ use align_address::Align;
 
 /// A virtual memory address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(transparent)]
 pub struct VirtAddr(usize);
 
@@ -14,6 +15,7 @@ impl_address!(VirtAddr, usize, as_usize);
 
 /// A physical memory address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(transparent)]
 pub struct PhysAddr(usize);
 

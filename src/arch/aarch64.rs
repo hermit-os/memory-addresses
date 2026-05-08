@@ -13,6 +13,7 @@ use align_address::Align;
 /// However, there are more restrictions (e.g., execption level 3 has only one address space)
 /// that are not encoded in this type.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(transparent)]
 pub struct VirtAddr(u64);
 
@@ -164,6 +165,7 @@ impl From<usize> for PhysAddr {
 /// The size of a valid physical address on aarch64 is implementation defined, but since Armv9.3
 /// not larger than 56 bits. This type enforces this limit.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(transparent)]
 pub struct PhysAddr(u64);
 

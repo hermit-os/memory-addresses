@@ -21,6 +21,7 @@ use x86_64::structures::paging::{PageOffset, PageTableIndex};
 /// to be copies of bit 47, i.e. the most significant bit. Addresses that fulfil this criterion
 /// are called “canonical”. This type guarantees that it always represents a canonical address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(transparent)]
 pub struct VirtAddr(u64);
 
@@ -36,6 +37,7 @@ impl_address!(VirtAddr, u64, as_u64);
 /// On `x86_64`, only the 52 lower bits of a physical address can be used. The top 12 bits need
 /// to be zero. This type guarantees that it always represents a valid physical address.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(transparent)]
 pub struct PhysAddr(u64);
 
