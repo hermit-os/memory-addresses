@@ -108,6 +108,7 @@ impl fmt::Display for AddrRangeError {
 }
 
 /// A memory range.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AddrRange<T: MemoryAddress> {
     /// Starting address
     pub start: T,

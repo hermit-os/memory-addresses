@@ -22,6 +22,7 @@ pub const TERA_PAGE_SIZE: usize = 1024 * 1024 * 1024 * 512;
 /// 64-bit addresses on riscv64 "must have bits 63–48 all equal to bit 47, or
 /// else a page-fault exception will occur."
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(transparent)]
 pub struct VirtAddr(u64);
 
@@ -182,6 +183,7 @@ impl From<usize> for PhysAddr {
 ///
 /// The size of a valid physical address on riscv64 is 44 bit PPN + 12 bit offset = 56 bit
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(transparent)]
 pub struct PhysAddr(u64);
 
